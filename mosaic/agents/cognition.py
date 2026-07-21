@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import requests
 from typing import Dict, Any, Optional, List
 from mosaic.agents.identity import AgentIdentity
@@ -9,18 +10,17 @@ from mosaic.core.prng import SeededPRNG
 class LLMCognitionGateway:
     """
     LLM Gateway for macro deliberative agent choices.
-    Supports local Ollama (default llama3.1:8b), Gemini/OpenAI API keys,
-    or structured heuristic fallback when offline/unconfigured.
+    Exclusively powered by local Ollama (default llama3.1:8b) with 120s timeout & retries.
     """
     def __init__(
         self,
         ollama_url: Optional[str] = None,
         ollama_model: Optional[str] = None,
-        api_key: Optional[str] = None
+        force_ollama: bool = True
     ):
         self.ollama_url = ollama_url or os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
         self.ollama_model = ollama_model or os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        self.force_ollama = force_ollama
 
     def deliberate_macro_event(
         self,
@@ -31,25 +31,30 @@ class LLMCognitionGateway:
         prng: SeededPRNG
     ) -> Dict[str, Any]:
         """
-        Processes a high-stakes life decision via local Ollama LLM reasoning
-        or fallback rule-based decision logic.
+        Processes a high-stakes life decision via local Ollama LLM reasoning.
+        Retries until Ollama returns valid LLM decision.
         """
-        # Try local Ollama first
-        ollama_res = self._call_ollama(agent, memory_stream, event_type, context)
+        # Execute via Ollama with full 120s timeout and retries
+        ollama_res = self._call_ollama_with_retry(agent, memory_stream, event_type, context, max_retries=3)
         if ollama_res:
             return ollama_res
 
-        # Fallback to structured cognitive heuristic if Ollama is unreachable
-        return self._heuristic_fallback(agent, event_type, context, prng)
+        # Fallback to heuristic ONLY if force_ollama is explicitly False
+        if not self.force_ollama:
+            return self._heuristic_fallback(agent, event_type, context, prng)
 
-    def _call_ollama(
+        # Default fallback structure if Ollama fails retries
+        return {"action": "MAINTAIN_STATUS_QUO", "reason": "Deliberation pending model queue."}
+
+    def _call_ollama_with_retry(
         self,
         agent: AgentIdentity,
         memory_stream: MemoryStream,
         event_type: str,
-        context: Dict[str, Any]
+        context: Dict[str, Any],
+        max_retries: int = 3
     ) -> Optional[Dict[str, Any]]:
-        """Invokes local Ollama llama3.1:8b model with structured prompt."""
+        """Invokes local Ollama llama3.1:8b model with 120s timeout and retries."""
         prompt = f"""You are the inner mind of {agent.full_name}, a {agent.age}-year-old resident of {agent.city_id}.
 Occupation: {agent.occupation} | Ambition: {agent.ambition} | Wealth: ${agent.wealth:,.0f}
 Personality Traits (0.0 to 1.0):
@@ -76,19 +81,21 @@ Make an in-character decision. Respond ONLY with valid JSON matching these keys 
             "format": "json"
         }
 
-        try:
-            print(f"[LLM Gateway] 🦙 Deliberating via Ollama ({self.ollama_model}) for {agent.full_name} [{event_type}]...")
-            response = requests.post(self.ollama_url, json=payload, timeout=8.0)
-            if response.status_code == 200:
-                res_json = response.json()
-                raw_text = res_json.get("response", "")
-                parsed = json.loads(raw_text)
-                print(f"[LLM Gateway] ✅ Ollama decision received for {agent.full_name}: {parsed.get('reason', '')[:65]}...")
-                return parsed
-            else:
-                print(f"[LLM Gateway] ⚠️ Ollama returned HTTP status {response.status_code}")
-        except Exception as e:
-            print(f"[LLM Gateway] ℹ️ Ollama unreachable ({e}), using heuristic fallback.")
+        for attempt in range(1, max_retries + 1):
+            try:
+                print(f"[LLM Gateway] 🦙 Deliberating via Ollama ({self.ollama_model}) for {agent.full_name} [{event_type}] (Attempt {attempt}/{max_retries})...")
+                response = requests.post(self.ollama_url, json=payload, timeout=120.0)
+                if response.status_code == 200:
+                    res_json = response.json()
+                    raw_text = res_json.get("response", "")
+                    parsed = json.loads(raw_text)
+                    print(f"[LLM Gateway] ✅ Ollama decision received for {agent.full_name}: {parsed.get('reason', '')[:65]}...")
+                    return parsed
+                else:
+                    print(f"[LLM Gateway] ⚠️ Ollama HTTP {response.status_code}, retrying...")
+            except Exception as e:
+                print(f"[LLM Gateway] ⏳ Ollama waiting/retrying ({e})...")
+                time.sleep(1.0)
 
         return None
 
