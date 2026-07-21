@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from typing import Dict, Any, Optional, List
 from mosaic.agents.identity import AgentIdentity
 from mosaic.agents.memory import MemoryStream
@@ -8,9 +9,17 @@ from mosaic.core.prng import SeededPRNG
 class LLMCognitionGateway:
     """
     LLM Gateway for macro deliberative agent choices.
-    Supports OpenAI/Gemini or structured heuristic fallback when offline/unconfigured.
+    Supports local Ollama (default llama3.1:8b), Gemini/OpenAI API keys,
+    or structured heuristic fallback when offline/unconfigured.
     """
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        ollama_url: Optional[str] = None,
+        ollama_model: Optional[str] = None,
+        api_key: Optional[str] = None
+    ):
+        self.ollama_url = ollama_url or os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
+        self.ollama_model = ollama_model or os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
     def deliberate_macro_event(
@@ -22,10 +31,63 @@ class LLMCognitionGateway:
         prng: SeededPRNG
     ) -> Dict[str, Any]:
         """
-        Processes a high-stakes life decision via LLM reasoning or fallback rule-based decision logic.
+        Processes a high-stakes life decision via local Ollama LLM reasoning
+        or fallback rule-based decision logic.
         """
-        # If API key is available, we can call the API; otherwise fallback to structured cognitive heuristic
+        # Try local Ollama first
+        ollama_res = self._call_ollama(agent, memory_stream, event_type, context)
+        if ollama_res:
+            return ollama_res
+
+        # Fallback to structured cognitive heuristic if Ollama is unreachable
         return self._heuristic_fallback(agent, event_type, context, prng)
+
+    def _call_ollama(
+        self,
+        agent: AgentIdentity,
+        memory_stream: MemoryStream,
+        event_type: str,
+        context: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Invokes local Ollama llama3.1:8b model with structured prompt."""
+        prompt = f"""You are the inner mind of {agent.full_name}, a {agent.age}-year-old resident of {agent.city_id}.
+Occupation: {agent.occupation} | Ambition: {agent.ambition} | Wealth: ${agent.wealth:,.0f}
+Personality Traits (0.0 to 1.0):
+- Openness: {agent.personality.openness}
+- Conscientiousness: {agent.personality.conscientiousness}
+- Extraversion: {agent.personality.extraversion}
+- Agreeableness: {agent.personality.agreeableness}
+- Neuroticism: {agent.personality.neuroticism}
+Political Orientation: {agent.values.political_orientation:+.2f} (-1.0 Left, +1.0 Right)
+
+Event Triggered: {event_type}
+Event Context: {json.dumps(context)}
+
+Make an in-character decision. Respond ONLY with valid JSON matching these keys based on event_type:
+- If MARRIAGE_PROPOSAL: {{"accepted": true/false, "reason": "reasoning"}}
+- If CAREER_CHANGE: {{"switch_job": true/false, "new_job": "title", "reason": "reasoning"}}
+- If FOUND_COMPANY: {{"found_company": true/false, "company_name": "Name", "industry": "Sector", "reason": "reasoning"}}
+- If POLITICAL_CANDIDACY: {{"run_for_office": true/false, "platform": "Platform summary", "reason": "reasoning"}}
+"""
+        payload = {
+            "model": self.ollama_model,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json"
+        }
+
+        try:
+            response = requests.post(self.ollama_url, json=payload, timeout=4.0)
+            if response.status_code == 200:
+                res_json = response.json()
+                raw_text = res_json.get("response", "")
+                parsed = json.loads(raw_text)
+                return parsed
+        except Exception:
+            # Fallback silently if Ollama is not running or takes > 4s
+            pass
+
+        return None
 
     def _heuristic_fallback(
         self,
@@ -46,7 +108,6 @@ class LLMCognitionGateway:
         elif event_type == "CAREER_CHANGE":
             current_job = agent.occupation
             ambition = agent.ambition
-            conscientiousness = agent.personality.conscientiousness
             switch = (prng.random() < 0.25) or (agent.happiness < 0.4 and prng.random() < 0.6)
             new_job = context.get("available_job", "Independent Contractor") if switch else current_job
             return {
