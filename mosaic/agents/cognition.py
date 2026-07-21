@@ -77,15 +77,18 @@ Make an in-character decision. Respond ONLY with valid JSON matching these keys 
         }
 
         try:
-            response = requests.post(self.ollama_url, json=payload, timeout=4.0)
+            print(f"[LLM Gateway] 🦙 Deliberating via Ollama ({self.ollama_model}) for {agent.full_name} [{event_type}]...")
+            response = requests.post(self.ollama_url, json=payload, timeout=8.0)
             if response.status_code == 200:
                 res_json = response.json()
                 raw_text = res_json.get("response", "")
                 parsed = json.loads(raw_text)
+                print(f"[LLM Gateway] ✅ Ollama decision received for {agent.full_name}: {parsed.get('reason', '')[:65]}...")
                 return parsed
-        except Exception:
-            # Fallback silently if Ollama is not running or takes > 4s
-            pass
+            else:
+                print(f"[LLM Gateway] ⚠️ Ollama returned HTTP status {response.status_code}")
+        except Exception as e:
+            print(f"[LLM Gateway] ℹ️ Ollama unreachable ({e}), using heuristic fallback.")
 
         return None
 

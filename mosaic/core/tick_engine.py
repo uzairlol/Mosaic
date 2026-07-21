@@ -7,7 +7,7 @@ from mosaic.agents.memory import MemoryStream, MemoryItem
 from mosaic.agents.cognition import FastPathRuleEngine, LLMCognitionGateway
 from mosaic.agents.kinship import KinshipEngine
 from mosaic.world.city import BUILTIN_CITIES, City
-from mosaic.world.economy import EconomicSystem
+from mosaic.world.economy import EconomicSystem, Company
 from mosaic.world.politics import PoliticalSystem
 from mosaic.world.media import SimSocialMedia, EchoPost
 from mosaic.historian.newspaper import AutomatedHistorianNewspaper, NewspaperIssue
@@ -105,12 +105,12 @@ class SimulationEngine:
                 # Inheritance Execution
                 KinshipEngine.execute_inheritance(agent, self.agents)
 
-        # 2. Macro Deliberative Choices (Marriages, Company Foundings)
+        # 2. Macro Deliberative Choices via LLM
         living_agents = [a for a in self.agents.values() if a.is_alive]
         if living_agents:
-            # Random Marriage Proposal Trigger
+            # A. Marriage Proposal Trigger
             single_adults = [a for a in living_agents if 20 <= a.age <= 55 and not a.spouse_id]
-            if len(single_adults) >= 2 and tick_prng.random() < 0.35:
+            if len(single_adults) >= 2 and tick_prng.random() < 0.4:
                 p1, p2 = tick_prng.sample(single_adults, 2)
                 if p1.gender != p2.gender and p1.city_id == p2.city_id:
                     delib = self.llm_gateway.deliberate_macro_event(
@@ -134,6 +134,69 @@ class SimulationEngine:
                         )
                         self.causal_graph.add_event(m_node)
                         current_salient_events.append(m_node)
+
+            # B. Company Founding Deliberation Trigger (Ambitious agents with wealth >= $12,000)
+            entrepreneurs = [a for a in living_agents if a.wealth >= 12000.0 and a.personality.openness > 0.5]
+            if entrepreneurs and tick_prng.random() < 0.5:
+                founder = tick_prng.choice(entrepreneurs)
+                delib = self.llm_gateway.deliberate_macro_event(
+                    founder, self.agent_memories[founder.id], "FOUND_COMPANY",
+                    {"preferred_industry": "Technology & Commerce"}, tick_prng
+                )
+                if delib.get("found_company") and delib.get("company_name"):
+                    comp_name = delib.get("company_name")
+                    ind = delib.get("industry", "Commerce")
+                    comp = Company(
+                        id=f"comp_t{self.tick}_{founder.id}",
+                        name=comp_name,
+                        city_id=founder.city_id,
+                        industry=ind,
+                        founder_id=founder.id,
+                        ceo_id=founder.id,
+                        capital=25000.0
+                    )
+                    self.economy.add_company(comp)
+                    founder.company_id = comp.id
+                    founder.occupation = f"CEO of {comp_name}"
+                    
+                    c_node = CausalNode(
+                        id=f"evt_found_t{self.tick}_{comp.id}",
+                        tick=self.tick,
+                        year=self.year,
+                        month=self.month,
+                        event_type="COMPANY_FOUNDED",
+                        title=f"{founder.full_name} Founds {comp_name}",
+                        description=f"Entrepreneur {founder.full_name} established {comp_name} in {founder.city_id}.",
+                        primary_agent_id=founder.id,
+                        location_city=founder.city_id,
+                        impact_salience=0.75
+                    )
+                    self.causal_graph.add_event(c_node)
+                    current_salient_events.append(c_node)
+
+            # C. Political Candidacy Deliberation Trigger
+            politicians = [a for a in living_agents if a.age >= 25 and a.personality.extraversion > 0.55]
+            if politicians and tick_prng.random() < 0.3:
+                candidate = tick_prng.choice(politicians)
+                delib = self.llm_gateway.deliberate_macro_event(
+                    candidate, self.agent_memories[candidate.id], "POLITICAL_CANDIDACY",
+                    {"city": candidate.city_id}, tick_prng
+                )
+                if delib.get("run_for_office"):
+                    pol_node = CausalNode(
+                        id=f"evt_candidacy_t{self.tick}_{candidate.id}",
+                        tick=self.tick,
+                        year=self.year,
+                        month=self.month,
+                        event_type="POLITICAL_CANDIDACY",
+                        title=f"{candidate.full_name} Declares Political Candidacy",
+                        description=f"{candidate.full_name} announced campaign platform: '{delib.get('platform', 'Civic Reform')}'.",
+                        primary_agent_id=candidate.id,
+                        location_city=candidate.city_id,
+                        impact_salience=0.7
+                    )
+                    self.causal_graph.add_event(pol_node)
+                    current_salient_events.append(pol_node)
 
         # 3. Socio-Economic Step
         econ_res = self.economy.step_economy(self.agents, self.cities, tick_prng)
