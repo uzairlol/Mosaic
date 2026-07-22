@@ -1,9 +1,9 @@
 /**
- * MOSAIC — Artificial Civilization God's Eye Observer App
- * Features real-time 2D simulation canvas & pastel neo-brutalist interactive UI
+ * MOSAIC — Earthy Planetary God's Eye Observer App (Solaria Prime)
+ * Renders topographical planet map, biome zones, agent swarms, and multi-box telemetry.
  */
 
-class MosaicGodsEyeApp {
+class MosaicPlanetaryApp {
     constructor() {
         this.autoPlayTimer = null;
         this.autoPlaySpeed = 2000;
@@ -16,16 +16,16 @@ class MosaicGodsEyeApp {
             agents: [],
             echoFeed: [],
             latestNewspaper: null,
-            agentPositions: new Map(), // agent_id -> { x, y, targetX, targetY, color, activity, city }
+            agentPositions: new Map(), // agent_id -> position info
             hoveredAgent: null
         };
 
-        // City Map Node Centers on 2D Canvas (1000x500 resolution)
-        this.cityNodes = {
-            city_solaria: { name: 'City Solaria', x: 500, y: 150, radius: 110, color: '#fef08a' },
-            city_aethelgard: { name: 'Aethelgard Docks', x: 200, y: 220, radius: 95, color: '#bae6fd' },
-            city_ironreach: { name: 'Ironreach Foundries', x: 300, y: 380, radius: 90, color: '#fecdd3' },
-            city_veridia: { name: 'Veridia Tech Valley', x: 750, y: 320, radius: 100, color: '#a7f3d0' }
+        // Topographical Biome Node Centers on Solaria Prime (1000x480 resolution)
+        this.planetBiomes = {
+            city_solaria: { name: 'Solaria Metropolis', x: 520, y: 160, radius: 110, color: '#f4a261', type: 'Metropolis' },
+            city_aethelgard: { name: 'Aethelgard Bay & Docks', x: 220, y: 220, radius: 95, color: '#2a9d8f', type: 'Coastal Docks' },
+            city_ironreach: { name: 'Ironreach Granite Ridges', x: 320, y: 360, radius: 90, color: '#c25e40', type: 'Foundry Ridges' },
+            city_veridia: { name: 'Veridia Forest Valley', x: 760, y: 300, radius: 105, color: '#2d6a4f', type: 'Forest Valley' }
         };
 
         this.initDOM();
@@ -40,6 +40,7 @@ class MosaicGodsEyeApp {
             gdpVal: document.getElementById('val-gdp'),
             popVal: document.getElementById('val-pop'),
             partyVal: document.getElementById('val-party'),
+            polRuling: document.getElementById('pol-ruling'),
             eventsVal: document.getElementById('val-events'),
             tickBadge: document.getElementById('canvas-tick-badge'),
 
@@ -48,20 +49,14 @@ class MosaicGodsEyeApp {
             btnPlay: document.getElementById('btn-play'),
             speedSelect: document.getElementById('speed-select'),
 
-            tabBtns: document.querySelectorAll('.tab-btn'),
-            tabPanels: document.querySelectorAll('.tab-panel'),
-
             godsCanvas: document.getElementById('gods-canvas'),
             mapTooltip: document.getElementById('map-tooltip'),
             mapAgentCount: document.getElementById('map-agent-count'),
 
             gdpCanvas: document.getElementById('canvas-gdp'),
-            popCanvas: document.getElementById('canvas-pop'),
 
-            citiesGrid: document.getElementById('cities-grid'),
             agentsGrid: document.getElementById('agents-grid'),
             agentSearch: document.getElementById('agent-search'),
-            cityFilter: document.getElementById('city-filter'),
 
             echoFeed: document.getElementById('echo-feed'),
             newspaperContainer: document.getElementById('newspaper-container'),
@@ -85,18 +80,8 @@ class MosaicGodsEyeApp {
             }
         });
 
-        this.elements.tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const targetTab = btn.dataset.tab;
-                this.switchTab(targetTab);
-            });
-        });
-
         if (this.elements.agentSearch) {
             this.elements.agentSearch.addEventListener('input', () => this.renderAgentsGrid());
-        }
-        if (this.elements.cityFilter) {
-            this.elements.cityFilter.addEventListener('change', () => this.renderAgentsGrid());
         }
 
         if (this.elements.drawerClose) {
@@ -108,10 +93,10 @@ class MosaicGodsEyeApp {
             });
         }
 
-        // Canvas Mouse Events
+        // Canvas Events
         if (this.elements.godsCanvas) {
             this.elements.godsCanvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
-            this.elements.godsCanvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+            this.elements.godsCanvas.addEventListener('click', () => this.handleCanvasClick());
             this.elements.godsCanvas.addEventListener('mouseleave', () => {
                 this.state.hoveredAgent = null;
                 if (this.elements.mapTooltip) this.elements.mapTooltip.style.display = 'none';
@@ -119,33 +104,17 @@ class MosaicGodsEyeApp {
         }
     }
 
-    switchTab(tabId) {
-        this.elements.tabBtns.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabId);
-        });
-        this.elements.tabPanels.forEach(panel => {
-            panel.classList.toggle('active', panel.id === `tab-${tabId}`);
-        });
-
-        if (tabId === 'agents' && this.state.agents.length === 0) this.fetchAgents();
-        if (tabId === 'echo') this.fetchEchoFeed();
-        if (tabId === 'newspaper') this.fetchNewspaper();
-    }
-
     async refreshAll() {
         await Promise.all([
             this.fetchStatus(),
             this.fetchHistory(),
             this.fetchCities(),
-            this.fetchAgents()
+            this.fetchAgents(),
+            this.fetchEchoFeed(),
+            this.fetchNewspaper()
         ]);
         this.renderTelemetry();
-        this.renderCities();
-
-        const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-        if (activeTab === 'echo') this.fetchEchoFeed();
-        if (activeTab === 'newspaper') this.fetchNewspaper();
-        if (activeTab === 'overview') this.renderSparklines();
+        this.renderSparkline();
     }
 
     async fetchStatus() {
@@ -153,7 +122,7 @@ class MosaicGodsEyeApp {
             const res = await fetch('/api/status');
             this.state.status = await res.json();
         } catch (e) {
-            console.error('Failed to fetch status:', e);
+            console.error('Failed status fetch:', e);
         }
     }
 
@@ -162,7 +131,7 @@ class MosaicGodsEyeApp {
             const res = await fetch('/api/history');
             this.state.history = await res.json();
         } catch (e) {
-            console.error('Failed to fetch history:', e);
+            console.error('Failed history fetch:', e);
         }
     }
 
@@ -171,7 +140,7 @@ class MosaicGodsEyeApp {
             const res = await fetch('/api/cities');
             this.state.cities = await res.json();
         } catch (e) {
-            console.error('Failed to fetch cities:', e);
+            console.error('Failed cities fetch:', e);
         }
     }
 
@@ -182,18 +151,18 @@ class MosaicGodsEyeApp {
             this.updateAgentPositions();
             this.renderAgentsGrid();
         } catch (e) {
-            console.error('Failed to fetch agents:', e);
+            console.error('Failed agents fetch:', e);
         }
     }
 
     async fetchEchoFeed() {
         try {
-            const res = await fetch('/api/echo?limit=30');
+            const res = await fetch('/api/echo?limit=15');
             const data = await res.json();
             this.state.echoFeed = data.feed || [];
             this.renderEchoFeed();
         } catch (e) {
-            console.error('Failed to fetch Echo feed:', e);
+            console.error('Failed echo fetch:', e);
         }
     }
 
@@ -203,7 +172,7 @@ class MosaicGodsEyeApp {
             this.state.latestNewspaper = await res.json();
             this.renderNewspaper();
         } catch (e) {
-            console.error('Failed to fetch newspaper:', e);
+            console.error('Failed newspaper fetch:', e);
         }
     }
 
@@ -251,29 +220,28 @@ class MosaicGodsEyeApp {
         const s = this.state.status;
         if (!s) return;
         if (this.elements.dateStr) this.elements.dateStr.textContent = s.date_str || `Month ${s.tick}`;
-        if (this.elements.tickBadge) this.elements.tickBadge.textContent = `#${s.tick || 0}`;
+        if (this.elements.tickBadge) this.elements.tickBadge.textContent = `TICK #${s.tick || 0}`;
         if (this.elements.gdpVal) this.elements.gdpVal.textContent = `$${(s.monthly_gdp || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         if (this.elements.popVal) this.elements.popVal.textContent = `${s.living_population || 0} / ${s.total_population || 0}`;
         if (this.elements.partyVal) this.elements.partyVal.textContent = s.ruling_party || 'Council';
+        if (this.elements.polRuling) this.elements.polRuling.textContent = s.ruling_party || 'Council';
         if (this.elements.eventsVal) this.elements.eventsVal.textContent = s.salient_events_count || 0;
-        if (this.elements.mapAgentCount) this.elements.mapAgentCount.textContent = `${s.living_population || 0} AGENTS LIVE`;
+        if (this.elements.mapAgentCount) this.elements.mapAgentCount.textContent = `${s.living_population || 0} CITIZENS LIVE`;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // GOD'S EYE 2D MAP CANVAS SIMULATION ENGINE
+    // TOPOGRAPHICAL PLANETARY CANVAS SIMULATION ENGINE
     // ─────────────────────────────────────────────────────────────
     initCanvas() {
         const canvas = this.elements.godsCanvas;
         if (!canvas) return;
 
-        // Set high DPR resolution
         canvas.width = 1000;
-        canvas.height = 500;
+        canvas.height = 480;
 
-        // Start render loop
         const renderLoop = () => {
             this.updatePositionsLoop();
-            this.drawGodsEyeCanvas();
+            this.drawPlanetaryCanvas();
             requestAnimationFrame(renderLoop);
         };
         requestAnimationFrame(renderLoop);
@@ -284,32 +252,30 @@ class MosaicGodsEyeApp {
         const tick = this.state.status.tick || 0;
 
         agents.forEach((a, idx) => {
-            const cityKey = a.city_id in this.cityNodes ? a.city_id : 'city_solaria';
-            const node = this.cityNodes[cityKey];
+            const cityKey = a.city_id in this.planetBiomes ? a.city_id : 'city_solaria';
+            const b = this.planetBiomes[cityKey];
 
-            // Deterministic position inside city circle based on agent index and tick
-            const seed = (idx * 37 + tick * 17) % 360;
+            const seed = (idx * 41 + tick * 19) % 360;
             const angle = (seed * Math.PI) / 180;
-            const dist = 15 + ((idx * 13) % (node.radius - 25));
+            const dist = 12 + ((idx * 11) % (b.radius - 20));
 
-            const targetX = node.x + Math.cos(angle) * dist;
-            const targetY = node.y + Math.sin(angle) * dist;
+            const targetX = b.x + Math.cos(angle) * dist;
+            const targetY = b.y + Math.sin(angle) * dist;
 
-            // Status color & activity
-            let color = '#38bdf8'; // Workplace
-            let activity = 'At Work';
+            let color = '#f4a261'; // Ochre
+            let activity = 'Working';
 
-            if (idx % 5 === 0) { color = '#10b981'; activity = 'At Residence'; }
-            else if (idx % 7 === 0) { color = '#f59e0b'; activity = 'Political Assembly'; }
-            else if (idx % 11 === 0) { color = '#a855f7'; activity = 'Market Plaza'; }
-            else if (a.wealth < 1000) { color = '#f43f5e'; activity = 'Financial Stress'; }
+            if (idx % 4 === 0) { color = '#2d6a4f'; activity = 'At Home'; }
+            else if (idx % 6 === 0) { color = '#d97724'; activity = 'Assembly'; }
+            else if (idx % 9 === 0) { color = '#2a9d8f'; activity = 'Harbor Trade'; }
+            else if (a.wealth < 1000) { color = '#c25e40'; activity = 'Financial Distress'; }
 
             if (!this.state.agentPositions.has(a.id)) {
                 this.state.agentPositions.set(a.id, {
                     id: a.id,
                     name: a.full_name,
                     occupation: a.occupation,
-                    city: node.name,
+                    city: b.name,
                     x: targetX,
                     y: targetY,
                     targetX,
@@ -328,69 +294,67 @@ class MosaicGodsEyeApp {
     }
 
     updatePositionsLoop() {
-        // Interpolate movement smoothly
         this.state.agentPositions.forEach(pos => {
             pos.x += (pos.targetX - pos.x) * 0.08;
             pos.y += (pos.targetY - pos.y) * 0.08;
         });
     }
 
-    drawGodsEyeCanvas() {
+    drawPlanetaryCanvas() {
         const canvas = this.elements.godsCanvas;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const w = canvas.width;
         const h = canvas.height;
 
-        // Background
-        ctx.fillStyle = '#181825';
+        // Ocean Basin Fill
+        ctx.fillStyle = '#121920';
         ctx.fillRect(0, 0, w, h);
 
-        // Draw connecting highways between cities
-        ctx.strokeStyle = '#32324a';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([8, 6]);
-
-        const nodes = Object.values(this.cityNodes);
-        ctx.beginPath();
-        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[1].x, nodes[1].y);
-        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[2].x, nodes[2].y);
-        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[3].x, nodes[3].y);
-        ctx.moveTo(nodes[1].x, nodes[1].y); ctx.lineTo(nodes[2].x, nodes[2].y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Draw City Zones
-        Object.values(this.cityNodes).forEach(node => {
-            // Fill circle
-            ctx.fillStyle = node.color + '1f'; // 12% opacity
+        // Draw Coastlines / Biomes
+        Object.values(this.planetBiomes).forEach(b => {
+            // Biome terrain glow
+            const grad = ctx.createRadialGradient(b.x, b.y, 10, b.x, b.y, b.radius);
+            grad.addColorStop(0, b.color + '44');
+            grad.addColorStop(1, b.color + '05');
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Thick border
-            ctx.strokeStyle = node.color;
-            ctx.lineWidth = 3;
+            // Biome contour border
+            ctx.strokeStyle = b.color + 'aa';
+            ctx.lineWidth = 2;
             ctx.stroke();
 
-            // City Label
-            ctx.fillStyle = '#f4f0fa';
-            ctx.font = 'bold 13px "Chakra Petch", sans-serif';
+            // Biome Title
+            ctx.fillStyle = '#f8f5ee';
+            ctx.font = 'bold 12px "Chakra Petch", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(node.name.toUpperCase(), node.x, node.y - node.radius - 8);
+            ctx.fillText(b.name.toUpperCase(), b.x, b.y - b.radius - 6);
         });
 
-        // Draw Agent Sprites
+        // Trade Roads
+        ctx.strokeStyle = '#26323e';
+        ctx.lineWidth = 3;
+        const bm = Object.values(this.planetBiomes);
+        ctx.beginPath();
+        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[1].x, bm[1].y);
+        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[2].x, bm[2].y);
+        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[3].x, bm[3].y);
+        ctx.stroke();
+
+        // Render Agent Swarm Sprites
         this.state.agentPositions.forEach(pos => {
             const isHovered = this.state.hoveredAgent?.id === pos.id;
 
             ctx.fillStyle = pos.color;
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, isHovered ? 8 : 4.5, 0, Math.PI * 2);
+            ctx.arc(pos.x, pos.y, isHovered ? 8 : 4, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.strokeStyle = '#181825';
-            ctx.lineWidth = isHovered ? 2 : 1;
+            ctx.strokeStyle = '#121920';
+            ctx.lineWidth = 1;
             ctx.stroke();
 
             if (isHovered) {
@@ -424,42 +388,37 @@ class MosaicGodsEyeApp {
             tooltip.style.top = `${e.clientY + 12}px`;
             tooltip.innerHTML = `
                 <strong>${found.name}</strong> (${found.occupation})<br/>
-                <span>📍 ${found.city}</span> • <span style="color:#181825;">${found.activity}</span>
+                <span>📍 ${found.city}</span> • <span style="color:var(--earth-terracotta);">${found.activity}</span>
             `;
         } else if (tooltip) {
             tooltip.style.display = 'none';
         }
     }
 
-    handleCanvasClick(e) {
+    handleCanvasClick() {
         if (this.state.hoveredAgent) {
             this.inspectAgent(this.state.hoveredAgent.id);
         }
     }
 
     // ─────────────────────────────────────────────────────────────
-    // TELEMETRY & OTHER VIEWS
+    // OTHER DOMAIN BOXES & INSPECTOR
     // ─────────────────────────────────────────────────────────────
-    renderSparklines() {
+    renderSparkline() {
         const hist = this.state.history;
-        if (!hist || hist.length === 0) return;
-        this.drawSparkline(this.elements.gdpCanvas, hist.map(h => h.gdp), '#a7f3d0');
-        this.drawSparkline(this.elements.popCanvas, hist.map(h => h.living_population), '#bae6fd');
-    }
+        const canvas = this.elements.gdpCanvas;
+        if (!canvas || !hist || hist.length < 2) return;
 
-    drawSparkline(canvas, dataPoints, strokeColor) {
-        if (!canvas || !dataPoints || dataPoints.length === 0) return;
         const ctx = canvas.getContext('2d');
         const width = canvas.width = canvas.parentElement.clientWidth;
-        const height = canvas.height = 200;
+        const height = canvas.height = 120;
 
         ctx.clearRect(0, 0, width, height);
+        const dataPoints = hist.map(h => h.gdp);
         const min = Math.min(...dataPoints);
         const max = Math.max(...dataPoints);
         const range = (max - min) || 1;
-        const padding = 20;
-
-        if (dataPoints.length < 2) return;
+        const padding = 15;
 
         ctx.beginPath();
         dataPoints.forEach((val, i) => {
@@ -469,53 +428,29 @@ class MosaicGodsEyeApp {
             else ctx.lineTo(x, y);
         });
 
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#2d6a4f';
+        ctx.lineWidth = 3;
         ctx.stroke();
-    }
-
-    renderCities() {
-        if (!this.elements.citiesGrid) return;
-        const cities = this.state.cities;
-        let html = '';
-        Object.entries(cities).forEach(([cid, c]) => {
-            html += `
-                <div class="city-card">
-                    <div class="city-name">${c.name}</div>
-                    <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:0.5rem;">${c.architectural_style || 'Urban'}</div>
-                    <p style="font-size:0.85rem; margin-bottom:0.8rem;">${c.description}</p>
-                    <div style="font-family:var(--font-blocky); font-weight:700;">POPULATION: ${c.population_count || 0}</div>
-                </div>
-            `;
-        });
-        this.elements.citiesGrid.innerHTML = html;
     }
 
     renderAgentsGrid() {
         if (!this.elements.agentsGrid) return;
         const search = (this.elements.agentSearch?.value || '').toLowerCase();
-        const citySel = this.elements.cityFilter?.value || '';
 
-        const filtered = this.state.agents.filter(a => {
-            const nameMatch = a.full_name.toLowerCase().includes(search) || a.occupation.toLowerCase().includes(search);
-            const cityMatch = !citySel || a.city_id === citySel;
-            return nameMatch && cityMatch;
-        });
+        const filtered = this.state.agents.filter(a =>
+            a.full_name.toLowerCase().includes(search) || a.occupation.toLowerCase().includes(search)
+        ).slice(0, 12);
 
         let html = '';
         filtered.forEach(a => {
             html += `
-                <div class="agent-card" onclick="app.inspectAgent('${a.id}')">
-                    <div class="agent-name">${a.full_name}</div>
-                    <div style="font-size:0.85rem; color:var(--ink-muted); font-weight:600;">${a.occupation}</div>
-                    <div style="font-family:var(--font-mono); font-size:0.75rem; margin-top:0.4rem;">
-                        ${a.age} yrs • Wealth: $${(a.wealth || 0).toLocaleString(undefined, {maximumFractionDigits:0})}
-                    </div>
+                <div style="background:var(--earth-cream); border:var(--border-thin); padding:0.55rem; border-radius:var(--radius-sharp); cursor:pointer;" onclick="app.inspectAgent('${a.id}')">
+                    <strong style="font-family:var(--font-blocky); font-size:0.9rem;">${a.full_name}</strong>
+                    <div style="font-size:0.75rem; color:var(--ink-muted);">${a.occupation}</div>
                 </div>
             `;
         });
-
-        this.elements.agentsGrid.innerHTML = html || '<p>No matching citizens.</p>';
+        this.elements.agentsGrid.innerHTML = html || '<p style="font-size:0.8rem;">No citizens found.</p>';
     }
 
     async inspectAgent(agentId) {
@@ -525,40 +460,22 @@ class MosaicGodsEyeApp {
             this.renderAgentDossier(data);
             this.openDrawer();
         } catch (e) {
-            console.error('Failed to load agent dossier:', e);
+            console.error('Failed to load dossier:', e);
         }
     }
 
     renderAgentDossier(data) {
         const id = data.identity;
-        const p = id.personality || {};
-
-        let memHtml = (data.salient_memories || []).slice(0, 5).map(m => `
-            <div style="padding:0.5rem; background:var(--bg-base); border:var(--border-thin); border-radius:var(--radius-sharp); margin-bottom:0.4rem; font-size:0.8rem;">
-                <strong>Tick #${m.tick}:</strong> ${m.content}
-            </div>
-        `).join('') || '<p>No memories logged.</p>';
-
         let html = `
-            <h2 style="font-family:var(--font-blocky); font-size:1.6rem; font-weight:800;">${id.full_name}</h2>
-            <div style="font-family:var(--font-mono); font-size:0.9rem; font-weight:700; margin-bottom:1rem;">${id.occupation} in ${id.city_id.replace('city_', '').toUpperCase()}</div>
+            <h2 style="font-family:var(--font-blocky); font-size:1.5rem; font-weight:800;">${id.full_name}</h2>
+            <div style="font-family:var(--font-mono); font-size:0.85rem; font-weight:700; margin-bottom:1rem;">${id.occupation} in ${id.city_id.replace('city_', '').toUpperCase()}</div>
 
-            <div style="background:var(--pastel-yellow); border:var(--border-thick); padding:0.8rem; border-radius:var(--radius-sharp); margin-bottom:1.2rem;">
+            <div style="background:var(--earth-cream); border:var(--border-thick); padding:0.8rem; border-radius:var(--radius-sharp); margin-bottom:1rem; font-size:0.85rem;">
                 <div><strong>AGE:</strong> ${id.age}</div>
                 <div><strong>WEALTH:</strong> $${(id.wealth || 0).toLocaleString()}</div>
                 <div><strong>SPOUSE:</strong> ${data.spouse_name}</div>
-                <div><strong>CHILDREN:</strong> ${data.children_names.length}</div>
             </div>
-
-            <h3 style="font-family:var(--font-blocky); margin-bottom:0.4rem;">BIG-5 TRAITS</h3>
-            <div style="font-size:0.8rem; margin-bottom:1rem;">
-                Openness: ${p.openness || 0} | Extraversion: ${p.extraversion || 0} | Neuroticism: ${p.neuroticism || 0}
-            </div>
-
-            <h3 style="font-family:var(--font-blocky); margin-bottom:0.4rem;">SALIENT MEMORIES</h3>
-            <div>${memHtml}</div>
         `;
-
         this.elements.drawerContent.innerHTML = html;
     }
 
@@ -567,49 +484,36 @@ class MosaicGodsEyeApp {
 
     renderEchoFeed() {
         if (!this.elements.echoFeed) return;
-        const posts = this.state.echoFeed;
+        const posts = this.state.echoFeed.slice(0, 4);
         let html = '';
         posts.forEach(p => {
             html += `
-                <div class="echo-card">
-                    <div style="display:flex; justify-content:space-between; font-family:var(--font-blocky); font-weight:800;">
-                        <span>${p.author_name}</span>
-                        <span style="font-family:var(--font-pixel); font-size:0.75rem;">Tick #${p.tick}</span>
-                    </div>
-                    <p style="margin:0.5rem 0;">${p.content}</p>
-                    <div style="font-family:var(--font-mono); font-size:0.75rem;">❤️ ${p.likes_count || 0} • 🔄 ${p.reposts_count || 0}</div>
+                <div style="background:var(--earth-cream); border:var(--border-thin); padding:0.6rem; border-radius:var(--radius-sharp); font-size:0.82rem;">
+                    <strong>${p.author_name}:</strong> "${p.content}"
                 </div>
             `;
         });
-        this.elements.echoFeed.innerHTML = html || '<p>No Echo posts.</p>';
+        this.elements.echoFeed.innerHTML = html || '<p style="font-size:0.8rem;">No Echo posts.</p>';
     }
 
     renderNewspaper() {
         if (!this.elements.newspaperContainer) return;
         const news = this.state.latestNewspaper;
         if (!news || news.message) {
-            this.elements.newspaperContainer.innerHTML = '<p>No gazette issue available.</p>';
+            this.elements.newspaperContainer.innerHTML = '<p style="font-size:0.8rem;">No gazette issue.</p>';
             return;
         }
 
-        const articles = (news.articles || []).map(a => `
-            <div style="margin-bottom:1rem;">
-                <h3 style="font-family:var(--font-blocky); font-size:1.3rem;">${a.title}</h3>
-                <p>${a.body}</p>
-            </div>
-        `).join('');
-
         this.elements.newspaperContainer.innerHTML = `
-            <div class="newspaper-wrapper">
-                <div class="newspaper-title">The Solaria Chronicle</div>
-                <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:1rem;">${news.date_str || `Tick ${news.tick}`} • ISSUE #${news.tick}</div>
-                <h2 style="font-family:var(--font-blocky); font-size:1.8rem; margin-bottom:1rem;">${news.headline}</h2>
-                <div>${articles}</div>
+            <div style="background:var(--earth-cream); border:var(--border-thin); padding:0.8rem; border-radius:var(--radius-sharp);">
+                <div style="font-family:var(--font-pixel); font-size:0.7rem; color:var(--earth-terracotta);">ISSUE #${news.tick}</div>
+                <h3 style="font-family:var(--font-blocky); font-size:1.1rem; margin:0.3rem 0;">${news.headline}</h3>
+                <p style="font-size:0.82rem; color:var(--ink-muted);">${(news.articles || [])[0]?.body || ''}</p>
             </div>
         `;
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new MosaicGodsEyeApp();
+    window.app = new MosaicPlanetaryApp();
 });

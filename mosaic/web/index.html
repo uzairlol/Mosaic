@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSAIC — Artificial Civilization God's Eye Observer</title>
+    <title>MOSAIC — Planetary God's Eye Observer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,700;0,6..72,800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
     <!-- Sticky Header Navigation -->
     <header class="navbar">
         <div class="brand">
-            <div class="brand-icon">M</div>
+            <div class="brand-icon">🌐</div>
             <div>
-                <div class="brand-title">MOSAIC GOD'S EYE</div>
-                <div style="font-size:0.68rem; font-family:var(--font-pixel);">LIVE CIVILIZATION SIMULATOR</div>
+                <div class="brand-title">SOLARIA PRIME — GOD'S EYE COMMAND</div>
+                <div style="font-size:0.68rem; font-family:var(--font-pixel);">PLANETARY CIVILIZATION OBSERVER</div>
             </div>
             <div class="live-badge">
                 <span class="live-dot"></span>
@@ -25,133 +25,146 @@
             </div>
         </div>
 
-        <!-- Simulation Control Bar -->
+        <!-- Control Bar -->
         <div class="control-bar">
             <button id="btn-step" class="btn btn-primary">⚡ Step Month</button>
             <button id="btn-step6" class="btn">⏩ Step 6M</button>
             <button id="btn-play" class="btn">▶ Auto Play</button>
-            <select id="speed-select" class="speed-select" title="Simulation Speed">
+            <select id="speed-select" class="speed-select" title="Speed">
                 <option value="2000">1x (2s)</option>
                 <option value="1000">2x (1s)</option>
                 <option value="500">4x (0.5s)</option>
             </select>
         </div>
-
-        <!-- Navigation Tabs -->
-        <nav class="nav-tabs">
-            <button class="tab-btn active" data-tab="godseye">👁️ God's Eye Map</button>
-            <button class="tab-btn" data-tab="overview">Telemetry</button>
-            <button class="tab-btn" data-tab="cities">Cities</button>
-            <button class="tab-btn" data-tab="agents">Citizens</button>
-            <button class="tab-btn" data-tab="echo">Echo Feed</button>
-            <button class="tab-btn" data-tab="newspaper">Gazette</button>
-        </nav>
     </header>
 
-    <!-- Main Content Container -->
+    <!-- Main Planetary Single-Screen Command Grid -->
     <main class="main-content">
+        <div class="planetary-grid">
 
-        <!-- TAB 1: GOD'S EYE VIEW MAP -->
-        <section id="tab-godseye" class="tab-panel active">
-            <div class="gods-eye-container">
-                <div class="canvas-header">
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
-                        <h2 style="font-family:var(--font-blocky); font-size:1.4rem; font-weight:800;">SOLARIA REGIONAL MAP — REAL-TIME AGENT POSITIONS</h2>
-                        <span id="map-agent-count" class="live-badge" style="background:var(--pastel-yellow);">500 AGENTS LIVE</span>
+            <!-- LEFT COLUMN: PLANETARY MAP & MACRO ECONOMY -->
+            <div class="left-column">
+
+                <!-- BOX 1: PLANETARY MAP & AGENT SWARM -->
+                <div class="command-box map-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>🌍</span> SOLARIA PRIME TOPOGRAPHICAL MAP & CITIZEN SWARM
+                        </div>
+                        <span id="map-agent-count" class="box-badge">500 AGENTS LIVE</span>
                     </div>
-                    <div style="font-family:var(--font-pixel); font-size:0.75rem;">
-                        TICK: <strong id="canvas-tick-badge" style="color:var(--ink-dark);">#0</strong>
+
+                    <canvas id="gods-canvas" class="gods-canvas"></canvas>
+
+                    <div class="map-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background:#2a9d8f;"></span> 🌊 Coastal Docks</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#386641;"></span> 🌲 Forest Valley</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f4a261;"></span> 🏙️ Solaria Metropolis</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#c25e40;"></span> ⛰️ Ironreach Ridges</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#d97724;"></span> 🏛️ Assembly & Plazas</div>
                     </div>
                 </div>
 
-                <canvas id="gods-canvas" class="gods-canvas"></canvas>
+                <!-- BOX 2: MACRO ECONOMY & TREASURY -->
+                <div class="command-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>📈</span> MACRO ECONOMY & REGIONAL TREASURY
+                        </div>
+                        <span id="canvas-tick-badge" class="box-badge">TICK #0</span>
+                    </div>
 
-                <div class="gods-legend">
-                    <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> 🏢 At Workplace</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> 🏠 At Home</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> 🏛️ City Center / Politics</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#a855f7;"></span> 🛍️ Social / Market</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span> 🚨 High Stress / Crime</div>
+                    <div class="metrics-row" style="margin-bottom:1rem;">
+                        <div class="sub-metric">
+                            <div class="metric-label">MONTHLY GDP</div>
+                            <div id="val-gdp" class="metric-val" style="color:var(--earth-moss);">$0.00</div>
+                        </div>
+                        <div class="sub-metric">
+                            <div class="metric-label">LIVING POPULATION</div>
+                            <div id="val-pop" class="metric-val" style="color:var(--earth-slate);">0 / 0</div>
+                        </div>
+                        <div class="sub-metric">
+                            <div class="metric-label">RULING PARLIAMENT</div>
+                            <div id="val-party" class="metric-val" style="color:var(--earth-ochre);">Councils</div>
+                        </div>
+                    </div>
+
+                    <div style="background:var(--bg-earth-dark); padding:0.8rem; border:var(--border-thin); border-radius:var(--radius-sharp);">
+                        <div style="color:var(--earth-cream); font-family:var(--font-blocky); font-size:0.85rem; margin-bottom:0.4rem;">GDP TRAJECTORY CURVE</div>
+                        <canvas id="canvas-gdp" style="width:100%; height:120px; background:#121920; border:var(--border-thin);"></canvas>
+                    </div>
                 </div>
+
+                <!-- BOX 3: CITIZENS DIRECTORY & DOSSIER TARGETING -->
+                <div class="command-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>👥</span> CITIZENS REGISTRY
+                        </div>
+                        <input type="text" id="agent-search" style="border:var(--border-thin); padding:0.3rem 0.6rem; font-family:var(--font-blocky); font-size:0.85rem;" placeholder="Search citizen...">
+                    </div>
+
+                    <div id="agents-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.75rem; max-height:220px; overflow-y:auto;">
+                        <!-- Agent cards -->
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Telemetry Metrics Grid below map -->
-            <div class="metrics-grid">
-                <div class="metric-card gdp">
-                    <div class="metric-title">MONTHLY GDP</div>
-                    <div id="val-gdp" class="metric-value">$0.00</div>
-                    <div class="metric-subtitle">Regional Output</div>
+            <!-- RIGHT COLUMN: CHRONICLE, ECHO PULSE & POLITICS -->
+            <div class="right-column">
+
+                <!-- BOX 4: GAZETTE & BREAKING CHRONICLE -->
+                <div class="command-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>📰</span> SOLARIA CHRONICLE GAZETTE
+                        </div>
+                        <span class="box-badge" style="background:var(--earth-terracotta); color:#fff;">LATEST ISSUE</span>
+                    </div>
+
+                    <div id="newspaper-container" style="max-height:280px; overflow-y:auto;">
+                        <!-- Gazette content -->
+                    </div>
                 </div>
-                <div class="metric-card pop">
-                    <div class="metric-title">LIVING CITIZENS</div>
-                    <div id="val-pop" class="metric-value">0 / 0</div>
-                    <div class="metric-subtitle">Active Agents</div>
+
+                <!-- BOX 5: ECHO SOCIAL SENTIMENT PULSE -->
+                <div class="command-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>💬</span> ECHO SOCIAL PULSE
+                        </div>
+                        <span class="box-badge" style="background:var(--earth-moss); color:#fff;">LIVE FEED</span>
+                    </div>
+
+                    <div id="echo-feed" style="display:flex; flex-direction:column; gap:0.6rem; max-height:280px; overflow-y:auto;">
+                        <!-- Echo feed posts -->
+                    </div>
                 </div>
-                <div class="metric-card party">
-                    <div class="metric-title">PARLIAMENT MAJORITY</div>
-                    <div id="val-party" class="metric-value">Councils</div>
-                    <div class="metric-subtitle">Ruling Faction</div>
+
+                <!-- BOX 6: STATE OF POLITICS & LAWS -->
+                <div class="command-box">
+                    <div class="box-header">
+                        <div class="box-title">
+                            <span>🏛️</span> PARLIAMENT & CIVIC AFFAIRS
+                        </div>
+                    </div>
+                    <div style="font-size:0.85rem; line-height:1.6;">
+                        <div><strong>RULING FACTION:</strong> <span id="pol-ruling" style="color:var(--earth-terracotta); font-weight:700;">Local Representative Councils</span></div>
+                        <div><strong>CIVIC SALIENCE NODES:</strong> <span id="val-events" style="font-weight:700;">0</span></div>
+                        <p style="color:var(--ink-muted); font-size:0.8rem; margin-top:0.4rem;">Parliament meets monthly to deliberate civic infrastructure, tax rates, and corporate regulations across all 4 planetary cities.</p>
+                    </div>
                 </div>
-                <div class="metric-card events">
-                    <div class="metric-title">CAUSAL NODES</div>
-                    <div id="val-events" class="metric-value">0</div>
-                    <div class="metric-subtitle">Turning Points</div>
-                </div>
+
             </div>
-        </section>
 
-        <!-- TAB 2: OVERVIEW TELEMETRY -->
-        <section id="tab-overview" class="tab-panel">
-            <div class="charts-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-                <div style="background:var(--bg-card); border:var(--border-thick); padding:1.25rem; box-shadow:var(--shadow-block);">
-                    <h3 style="font-family:var(--font-blocky); font-size:1.1rem; margin-bottom:1rem;">GDP Trajectory</h3>
-                    <canvas id="canvas-gdp" style="width:100%; height:200px; background:#181825; border:var(--border-thin);"></canvas>
-                </div>
-                <div style="background:var(--bg-card); border:var(--border-thick); padding:1.25rem; box-shadow:var(--shadow-block);">
-                    <h3 style="font-family:var(--font-blocky); font-size:1.1rem; margin-bottom:1rem;">Population Curve</h3>
-                    <canvas id="canvas-pop" style="width:100%; height:200px; background:#181825; border:var(--border-thin);"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 3: CITIES REGIONAL GRID -->
-        <section id="tab-cities" class="tab-panel">
-            <h2 style="font-family:var(--font-blocky); font-size:1.5rem; font-weight:800; margin-bottom:1rem;">Solaria Cities & Hubs</h2>
-            <div id="cities-grid" class="cities-grid"></div>
-        </section>
-
-        <!-- TAB 4: AGENTS DIRECTORY -->
-        <section id="tab-agents" class="tab-panel">
-            <div class="directory-controls">
-                <input type="text" id="agent-search" class="input-search" placeholder="Search citizen name or job...">
-                <select id="city-filter" class="select-filter">
-                    <option value="">All Cities</option>
-                    <option value="city_solaria">Solaria</option>
-                    <option value="city_ironreach">Ironreach</option>
-                    <option value="city_aethelgard">Aethelgard</option>
-                    <option value="city_veridia">Veridia</option>
-                </select>
-            </div>
-            <div id="agents-grid" class="agents-grid"></div>
-        </section>
-
-        <!-- TAB 5: ECHO SOCIAL FEED -->
-        <section id="tab-echo" class="tab-panel">
-            <h2 style="font-family:var(--font-blocky); font-size:1.5rem; text-align:center; margin-bottom:1.5rem;">Echo Social Network</h2>
-            <div id="echo-feed" class="echo-feed"></div>
-        </section>
-
-        <!-- TAB 6: GAZETTE NEWSPAPER -->
-        <section id="tab-newspaper" class="tab-panel">
-            <div id="newspaper-container"></div>
-        </section>
-
+        </div>
     </main>
 
-    <!-- Map Tooltip Popup -->
+    <!-- Floating Map Tooltip -->
     <div id="map-tooltip" class="map-tooltip"></div>
 
-    <!-- Side Drawer Modal for Agent Dossier -->
+    <!-- Agent Dossier Side Drawer -->
     <div id="drawer-backdrop" class="drawer-backdrop">
         <div class="drawer-panel">
             <button id="drawer-close" class="drawer-close">✕</button>
