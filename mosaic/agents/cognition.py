@@ -51,7 +51,11 @@ Respond strictly in JSON format:
             res = requests.post(self.ollama_url, json=payload, timeout=15.0)
             if res.status_code == 200:
                 parsed = json.loads(res.json().get("response", ""))
-                if "content" in parsed:
+                if isinstance(parsed, dict) and "content" in parsed:
+                    if "hashtags" not in parsed or not isinstance(parsed["hashtags"], list):
+                        parsed["hashtags"] = ["MosaicLife", city_clean]
+                    if "sentiment" not in parsed or not isinstance(parsed["sentiment"], (int, float)):
+                        parsed["sentiment"] = 0.2
                     return parsed
         except Exception:
             pass

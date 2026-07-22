@@ -126,17 +126,23 @@ class SimSocialMedia:
             # Ask LLM Gateway to generate in-character post if LLM is available
             post_data = llm_gateway.generate_agent_echo_post(agent, known_events, salient_events, prng)
 
+            content = post_data.get("content", "")
+            hashtags = post_data.get("hashtags", ["MosaicLife"])
+            if not isinstance(hashtags, list):
+                hashtags = [str(hashtags)]
+            sentiment = float(post_data.get("sentiment", 0.2))
+
             post_id = f"post_t{current_tick}_{aid}_{prng.randint(100, 999)}"
             post = EchoPost(
                 id=post_id,
                 author_id=agent.id,
                 author_name=agent.full_name,
                 tick=current_tick,
-                content=post_data["content"],
+                content=content,
                 likes_count=prng.randint(3, 85),
                 reposts_count=prng.randint(0, 24),
-                hashtags=post_data["hashtags"],
-                sentiment=post_data["sentiment"]
+                hashtags=hashtags,
+                sentiment=sentiment
             )
             self.publish_post(post)
             new_posts.append(post)
