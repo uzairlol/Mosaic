@@ -40,6 +40,10 @@ def get_simulation_status():
         "total_rumors": len(engine.media.rumors)
     }
 
+@app.get("/api/history")
+def get_simulation_history():
+    return getattr(engine, "history", [])
+
 @app.post("/api/step")
 def step_simulation(months: int = Query(1, ge=1, le=24)):
     results = []

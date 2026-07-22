@@ -44,6 +44,7 @@ class SimulationEngine:
         
         # History Records
         self.newspapers: List[NewspaperIssue] = []
+        self.history: List[Dict[str, Any]] = []
 
     def initialize_new_world(self, population: int = 500):
         """Builds a fresh world with 500 agents across 4 cities."""
@@ -56,7 +57,16 @@ class SimulationEngine:
         self.economy.load_dict(world_data["economy"])
         self.politics.load_dict(world_data["politics"])
         
-        # Initial Save Snapshot
+        # Initial Save Snapshot & History
+        self.history = [{
+            "tick": self.tick,
+            "year": self.year,
+            "month": self.month,
+            "date": self.current_date_str,
+            "gdp": self.economy.total_gdp,
+            "living_population": len([a for a in self.agents.values() if a.is_alive]),
+            "salient_events_count": len(self.causal_graph.nodes)
+        }]
         self.save_current_snapshot()
         print(f"[Mosaic] Initialized world with {len(self.agents)} agents across 4 cities.")
 
@@ -307,6 +317,17 @@ class SimulationEngine:
         for city in self.cities.values():
             residents = [a for a in self.agents.values() if a.city_id == city.id and a.is_alive]
             self.wiki.generate_city_article(city, len(residents))
+
+        # Append history record
+        self.history.append({
+            "tick": self.tick,
+            "year": self.year,
+            "month": self.month,
+            "date": self.current_date_str,
+            "gdp": self.economy.total_gdp,
+            "living_population": len([a for a in self.agents.values() if a.is_alive]),
+            "salient_events_count": len(self.causal_graph.nodes)
+        })
 
         # Save snapshot automatically
         self.save_current_snapshot()

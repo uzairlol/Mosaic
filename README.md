@@ -53,7 +53,13 @@ Every design decision prioritizes long-term extensibility, modularity, explainab
   - **Solaria**: Cultural & Media Capital (Journalism, Public Relations, Civic Debate).
 - **Causal Graph & Explainability**: Every macro event records a `CausalNode` with antecedent links so observers can ask *"Why did this happen?"* and view the causal chain.
 - **Automated Historian**: At the conclusion of every tick, compiles *"The Mosaic Chronicle"* newspaper and auto-generates Wikipedia-style markdown entity dossiers.
-- **Modern Observer Web Portal**: Living window into the civilization featuring gazette reader, citizen dossiers with family trees, city maps, causal graph tracer, and sim-social media feed.
+- **Modern Observer Telemetry Portal**: Interactive living workbench featuring:
+  - Real-time auto-stepping controls (`1x`, `2x`, `4x` speed intervals) and manual month stepping.
+  - Live HTML5 Canvas sparklines for GDP trajectory and population growth curves.
+  - Interactive regional city grid for Solaria's 5 cities.
+  - Searchable agent directory with inspectable side-dossier drawer (Big-5 personality radar, family trees, and memory stream).
+  - Sim-social feed ("Echo") with hashtag sentiment tracking.
+  - Editorial Gazette newspaper reader and causal provenance timeline graph.
 
 ---
 
@@ -75,7 +81,7 @@ Start the live observer web platform on `http://127.0.0.1:8000`:
 ```bash
 python main.py --server --port 8000
 ```
-Open `http://127.0.0.1:8000` in your web browser to observe the civilization, advance months, browse gazettes, trace causal graphs, and explore citizen dossiers.
+Open `http://127.0.0.1:8000` in your web browser to observe the civilization, advance months, auto-play ticks, explore agent dossiers, browse gazettes, and trace causal graphs.
 
 ### 4. Run via CLI Simulation Ticks
 To advance the simulation by 12 discrete months (1 full year) in CLI mode:
@@ -93,7 +99,7 @@ Mosaic/
 ├── requirements.txt            # Python dependencies
 ├── mosaic/
 │   ├── core/
-│   │   ├── tick_engine.py      # Discrete monthly tick simulation manager
+│   │   ├── tick_engine.py      # Discrete monthly tick simulation manager & history tracking
 │   │   ├── prng.py             # Seeded deterministic random number generator
 │   │   ├── persistence.py      # Versioned state snapshot save/load engine
 │   │   └── causal_graph.py     # Causal DAG tracker ("Why did this happen?")
@@ -113,9 +119,11 @@ Mosaic/
 │   ├── generator/
 │   │   └── world_builder.py    # Population & initial world state generator
 │   ├── server/
-│   │   └── app.py              # FastAPI REST API & WebSocket server
+│   │   └── app.py              # FastAPI REST API & telemetry endpoints (/api/history)
 │   └── web/
-│       └── index.html          # Modern Observer Web Portal UI
+│       ├── index.html          # Revamped Observer Web Portal workbench UI
+│       ├── style.css           # Glassmorphism cyber-telemetry design tokens & layout
+│       └── app.js              # Real-time state manager & Canvas sparkline renderer
 ├── saves/                      # Serialized deterministic world snapshot files
 ├── gazettes/                   # Generated monthly newspapers
 └── wiki_data/                  # Auto-generated Living Encyclopedia pages
