@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSAIC — Planetary God's Eye Observer</title>
+    <title>MOSAIC — Solaria Prime Detailed Planetary Observer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
@@ -11,13 +11,13 @@
 </head>
 <body>
 
-    <!-- Sticky Header Navigation -->
+    <!-- Header Navigation -->
     <header class="navbar">
         <div class="brand">
-            <div class="brand-icon">🌐</div>
+            <div class="brand-icon">🪐</div>
             <div>
-                <div class="brand-title">SOLARIA PRIME — GOD'S EYE COMMAND</div>
-                <div style="font-size:0.68rem; font-family:var(--font-pixel);">PLANETARY CIVILIZATION OBSERVER</div>
+                <div class="brand-title">SOLARIA PRIME — PLANETARY MAP COMMAND</div>
+                <div style="font-size:0.68rem; font-family:var(--font-pixel);">TOPOGRAPHICAL GOD'S EYE SIMULATOR</div>
             </div>
             <div class="live-badge">
                 <span class="live-dot"></span>
@@ -38,30 +38,66 @@
         </div>
     </header>
 
-    <!-- Main Planetary Single-Screen Command Grid -->
+    <!-- Main Planetary Grid -->
     <main class="main-content">
         <div class="planetary-grid">
 
-            <!-- LEFT COLUMN: PLANETARY MAP & MACRO ECONOMY -->
+            <!-- LEFT COLUMN: MAP & ECONOMY -->
             <div class="left-column">
 
-                <!-- BOX 1: PLANETARY MAP & AGENT SWARM -->
+                <!-- BOX 1: ULTRA-DETAILED PLANETARY MAP -->
                 <div class="command-box map-box">
                     <div class="box-header">
                         <div class="box-title">
-                            <span>🌍</span> SOLARIA PRIME TOPOGRAPHICAL MAP & CITIZEN SWARM
+                            <span>🗺️</span> SOLARIA PRIME TOPOGRAPHICAL WORLD MAP & ENVIRONMENT
                         </div>
-                        <span id="map-agent-count" class="box-badge">500 AGENTS LIVE</span>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span id="map-agent-count" class="box-badge">500 CITIZENS</span>
+                            <span id="canvas-tick-badge" class="box-badge" style="background:var(--earth-sand);">TICK #0</span>
+                        </div>
                     </div>
 
-                    <canvas id="gods-canvas" class="gods-canvas"></canvas>
+                    <!-- Map HUD Control Toolbar -->
+                    <div class="map-hud-toolbar">
+                        <!-- Zoom Controls -->
+                        <div class="hud-group">
+                            <span class="hud-label">ZOOM:</span>
+                            <button id="map-btn-zoom-in" class="hud-btn">+</button>
+                            <button id="map-btn-zoom-out" class="hud-btn">-</button>
+                            <button id="map-btn-reset" class="hud-btn">RESET</button>
+                        </div>
 
+                        <!-- Layer Toggles -->
+                        <div class="hud-group">
+                            <span class="hud-label">LAYERS:</span>
+                            <label class="hud-check"><input type="checkbox" id="layer-clouds" checked> ☁️ Clouds</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-ships" checked> 🚢 Ships</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-roads" checked> 🛣️ Highways</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-agents" checked> 👥 Citizens</label>
+                        </div>
+
+                        <!-- Activity Filters -->
+                        <div class="hud-group">
+                            <span class="hud-label">FILTER:</span>
+                            <button class="filter-btn active" data-filter="all">ALL</button>
+                            <button class="filter-btn" data-filter="work">🏢 WORK</button>
+                            <button class="filter-btn" data-filter="home">🏠 HOME</button>
+                            <button class="filter-btn" data-filter="rally">🏛️ RALLY</button>
+                            <button class="filter-btn" data-filter="stress">🚨 STRESS</button>
+                        </div>
+                    </div>
+
+                    <!-- 2D High-Detail Canvas -->
+                    <canvas id="gods-canvas" class="gods-canvas-hd"></canvas>
+
+                    <!-- Map Legend -->
                     <div class="map-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background:#2a9d8f;"></span> 🌊 Coastal Docks</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#386641;"></span> 🌲 Forest Valley</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f4a261;"></span> 🏙️ Solaria Metropolis</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#c25e40;"></span> ⛰️ Ironreach Ridges</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#d97724;"></span> 🏛️ Assembly & Plazas</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#2a9d8f;"></span> 🌊 Coral Reef & Docks</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#2d6a4f;"></span> 🌲 Pine Forests & Canopy</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f4a261;"></span> 🏙️ Metropolis Urban Grid</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#c25e40;"></span> ⛰️ Snow Peak Ridges</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#d97724;"></span> 🏭 Factory Smoke Stacks</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#e76f51;"></span> 🌾 Agriculture Canals</div>
                     </div>
                 </div>
 
@@ -69,9 +105,8 @@
                 <div class="command-box">
                     <div class="box-header">
                         <div class="box-title">
-                            <span>📈</span> MACRO ECONOMY & REGIONAL TREASURY
+                            <span>📈</span> MACRO ECONOMY & TREASURY
                         </div>
-                        <span id="canvas-tick-badge" class="box-badge">TICK #0</span>
                     </div>
 
                     <div class="metrics-row" style="margin-bottom:1rem;">
@@ -80,7 +115,7 @@
                             <div id="val-gdp" class="metric-val" style="color:var(--earth-moss);">$0.00</div>
                         </div>
                         <div class="sub-metric">
-                            <div class="metric-label">LIVING POPULATION</div>
+                            <div class="metric-label">LIVING CITIZENS</div>
                             <div id="val-pop" class="metric-val" style="color:var(--earth-slate);">0 / 0</div>
                         </div>
                         <div class="sub-metric">
@@ -90,12 +125,12 @@
                     </div>
 
                     <div style="background:var(--bg-earth-dark); padding:0.8rem; border:var(--border-thin); border-radius:var(--radius-sharp);">
-                        <div style="color:var(--earth-cream); font-family:var(--font-blocky); font-size:0.85rem; margin-bottom:0.4rem;">GDP TRAJECTORY CURVE</div>
+                        <div style="color:var(--earth-cream); font-family:var(--font-blocky); font-size:0.85rem; margin-bottom:0.4rem;">GDP HISTORICAL TRAJECTORY</div>
                         <canvas id="canvas-gdp" style="width:100%; height:120px; background:#121920; border:var(--border-thin);"></canvas>
                     </div>
                 </div>
 
-                <!-- BOX 3: CITIZENS DIRECTORY & DOSSIER TARGETING -->
+                <!-- BOX 3: CITIZENS REGISTRY -->
                 <div class="command-box">
                     <div class="box-header">
                         <div class="box-title">
@@ -104,55 +139,43 @@
                         <input type="text" id="agent-search" style="border:var(--border-thin); padding:0.3rem 0.6rem; font-family:var(--font-blocky); font-size:0.85rem;" placeholder="Search citizen...">
                     </div>
 
-                    <div id="agents-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.75rem; max-height:220px; overflow-y:auto;">
-                        <!-- Agent cards -->
-                    </div>
+                    <div id="agents-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.75rem; max-height:220px; overflow-y:auto;"></div>
                 </div>
 
             </div>
 
-            <!-- RIGHT COLUMN: CHRONICLE, ECHO PULSE & POLITICS -->
+            <!-- RIGHT COLUMN: CHRONICLE, ECHO & POLITICS -->
             <div class="right-column">
 
-                <!-- BOX 4: GAZETTE & BREAKING CHRONICLE -->
+                <!-- BOX 4: GAZETTE CHRONICLE -->
                 <div class="command-box">
                     <div class="box-header">
-                        <div class="box-title">
-                            <span>📰</span> SOLARIA CHRONICLE GAZETTE
-                        </div>
+                        <div class="box-title"><span>📰</span> SOLARIA CHRONICLE GAZETTE</div>
                         <span class="box-badge" style="background:var(--earth-terracotta); color:#fff;">LATEST ISSUE</span>
                     </div>
 
-                    <div id="newspaper-container" style="max-height:280px; overflow-y:auto;">
-                        <!-- Gazette content -->
-                    </div>
+                    <div id="newspaper-container" style="max-height:300px; overflow-y:auto;"></div>
                 </div>
 
-                <!-- BOX 5: ECHO SOCIAL SENTIMENT PULSE -->
+                <!-- BOX 5: ECHO SOCIAL PULSE -->
                 <div class="command-box">
                     <div class="box-header">
-                        <div class="box-title">
-                            <span>💬</span> ECHO SOCIAL PULSE
-                        </div>
+                        <div class="box-title"><span>💬</span> ECHO SOCIAL PULSE</div>
                         <span class="box-badge" style="background:var(--earth-moss); color:#fff;">LIVE FEED</span>
                     </div>
 
-                    <div id="echo-feed" style="display:flex; flex-direction:column; gap:0.6rem; max-height:280px; overflow-y:auto;">
-                        <!-- Echo feed posts -->
-                    </div>
+                    <div id="echo-feed" style="display:flex; flex-direction:column; gap:0.6rem; max-height:300px; overflow-y:auto;"></div>
                 </div>
 
-                <!-- BOX 6: STATE OF POLITICS & LAWS -->
+                <!-- BOX 6: POLITICS & LAWS -->
                 <div class="command-box">
                     <div class="box-header">
-                        <div class="box-title">
-                            <span>🏛️</span> PARLIAMENT & CIVIC AFFAIRS
-                        </div>
+                        <div class="box-title"><span>🏛️</span> PARLIAMENT & CIVIC AFFAIRS</div>
                     </div>
                     <div style="font-size:0.85rem; line-height:1.6;">
-                        <div><strong>RULING FACTION:</strong> <span id="pol-ruling" style="color:var(--earth-terracotta); font-weight:700;">Local Representative Councils</span></div>
+                        <div><strong>RULING FACTION:</strong> <span id="pol-ruling" style="color:var(--earth-terracotta); font-weight:700;">Representative Councils</span></div>
                         <div><strong>CIVIC SALIENCE NODES:</strong> <span id="val-events" style="font-weight:700;">0</span></div>
-                        <p style="color:var(--ink-muted); font-size:0.8rem; margin-top:0.4rem;">Parliament meets monthly to deliberate civic infrastructure, tax rates, and corporate regulations across all 4 planetary cities.</p>
+                        <p style="color:var(--ink-muted); font-size:0.8rem; margin-top:0.4rem;">Parliament meets monthly to deliberate civic infrastructure, tax rates, and corporate regulations across all planetary biomes.</p>
                     </div>
                 </div>
 

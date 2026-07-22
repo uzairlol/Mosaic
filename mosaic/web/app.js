@@ -1,13 +1,40 @@
 /**
- * MOSAIC — Earthy Planetary God's Eye Observer App (Solaria Prime)
- * Renders topographical planet map, biome zones, agent swarms, and multi-box telemetry.
+ * MOSAIC — Solaria Prime Ultra-Detailed Planetary Observer Engine
+ * Renders rich topographical terrain, mountain peaks, forest canopies, city grids,
+ * animated particle clouds/smoke, ocean cargo routes, zoom/pan controls, and swarm activity filters.
  */
 
-class MosaicPlanetaryApp {
+class MosaicUltraPlanetaryApp {
     constructor() {
         this.autoPlayTimer = null;
         this.autoPlaySpeed = 2000;
         this.isStepping = false;
+
+        // Zoom & Pan State
+        this.zoom = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+
+        // Layer Toggles & Filter State
+        this.layers = { clouds: true, ships: true, roads: true, agents: true };
+        this.activeFilter = 'all';
+
+        // Animated Particles & Ships
+        this.clouds = [
+            { x: 100, y: 80, speed: 0.25, size: 60 },
+            { x: 450, y: 140, speed: 0.35, size: 80 },
+            { x: 750, y: 60, speed: 0.20, size: 70 },
+            { x: 300, y: 320, speed: 0.30, size: 65 }
+        ];
+
+        this.ships = [
+            { x: 150, y: 240, targetX: 420, targetY: 180, speed: 0.4 },
+            { x: 420, y: 180, targetX: 720, targetY: 340, speed: 0.3 }
+        ];
+
+        this.smokeParticles = [];
 
         this.state = {
             status: {},
@@ -16,21 +43,21 @@ class MosaicPlanetaryApp {
             agents: [],
             echoFeed: [],
             latestNewspaper: null,
-            agentPositions: new Map(), // agent_id -> position info
+            agentPositions: new Map(),
             hoveredAgent: null
         };
 
-        // Topographical Biome Node Centers on Solaria Prime (1000x480 resolution)
-        this.planetBiomes = {
-            city_solaria: { name: 'Solaria Metropolis', x: 520, y: 160, radius: 110, color: '#f4a261', type: 'Metropolis' },
-            city_aethelgard: { name: 'Aethelgard Bay & Docks', x: 220, y: 220, radius: 95, color: '#2a9d8f', type: 'Coastal Docks' },
-            city_ironreach: { name: 'Ironreach Granite Ridges', x: 320, y: 360, radius: 90, color: '#c25e40', type: 'Foundry Ridges' },
-            city_veridia: { name: 'Veridia Forest Valley', x: 760, y: 300, radius: 105, color: '#2d6a4f', type: 'Forest Valley' }
+        // Detailed Solaria Prime Geography Nodes (1000x560 space)
+        this.citiesHD = {
+            city_solaria: { name: 'Solaria Metropolis', x: 550, y: 170, radius: 120, color: '#f4a261', type: 'Metropolis' },
+            city_aethelgard: { name: 'Aethelgard Harbor & Docks', x: 220, y: 240, radius: 100, color: '#2a9d8f', type: 'Port' },
+            city_ironreach: { name: 'Ironreach Foundries & Peaks', x: 340, y: 400, radius: 95, color: '#c25e40', type: 'Industrial' },
+            city_veridia: { name: 'Veridia Valleys & Farms', x: 800, y: 320, radius: 110, color: '#2d6a4f', type: 'Valley' }
         };
 
         this.initDOM();
         this.bindEvents();
-        this.initCanvas();
+        this.initCanvasHD();
         this.refreshAll();
     }
 
@@ -52,6 +79,17 @@ class MosaicPlanetaryApp {
             godsCanvas: document.getElementById('gods-canvas'),
             mapTooltip: document.getElementById('map-tooltip'),
             mapAgentCount: document.getElementById('map-agent-count'),
+
+            btnZoomIn: document.getElementById('map-btn-zoom-in'),
+            btnZoomOut: document.getElementById('map-btn-zoom-out'),
+            btnReset: document.getElementById('map-btn-reset'),
+
+            checkClouds: document.getElementById('layer-clouds'),
+            checkShips: document.getElementById('layer-ships'),
+            checkRoads: document.getElementById('layer-roads'),
+            checkAgents: document.getElementById('layer-agents'),
+
+            filterBtns: document.querySelectorAll('.filter-btn'),
 
             gdpCanvas: document.getElementById('canvas-gdp'),
 
@@ -80,6 +118,26 @@ class MosaicPlanetaryApp {
             }
         });
 
+        // Zoom Controls
+        if (this.elements.btnZoomIn) this.elements.btnZoomIn.addEventListener('click', () => this.setZoom(this.zoom * 1.25));
+        if (this.elements.btnZoomOut) this.elements.btnZoomOut.addEventListener('click', () => this.setZoom(this.zoom / 1.25));
+        if (this.elements.btnReset) this.elements.btnReset.addEventListener('click', () => { this.zoom = 1.0; this.panX = 0; this.panY = 0; });
+
+        // Layer Toggles
+        if (this.elements.checkClouds) this.elements.checkClouds.addEventListener('change', (e) => this.layers.clouds = e.target.checked);
+        if (this.elements.checkShips) this.elements.checkShips.addEventListener('change', (e) => this.layers.ships = e.target.checked);
+        if (this.elements.checkRoads) this.elements.checkRoads.addEventListener('change', (e) => this.layers.roads = e.target.checked);
+        if (this.elements.checkAgents) this.elements.checkAgents.addEventListener('change', (e) => this.layers.agents = e.target.checked);
+
+        // Activity Filters
+        this.elements.filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.elements.filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.activeFilter = btn.dataset.filter;
+            });
+        });
+
         if (this.elements.agentSearch) {
             this.elements.agentSearch.addEventListener('input', () => this.renderAgentsGrid());
         }
@@ -93,15 +151,41 @@ class MosaicPlanetaryApp {
             });
         }
 
-        // Canvas Events
-        if (this.elements.godsCanvas) {
-            this.elements.godsCanvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
-            this.elements.godsCanvas.addEventListener('click', () => this.handleCanvasClick());
-            this.elements.godsCanvas.addEventListener('mouseleave', () => {
-                this.state.hoveredAgent = null;
-                if (this.elements.mapTooltip) this.elements.mapTooltip.style.display = 'none';
+        // Canvas Mouse & Drag Events
+        const canvas = this.elements.godsCanvas;
+        if (canvas) {
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+                this.setZoom(this.zoom * zoomFactor);
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                this.isDragging = true;
+                this.dragStart = { x: e.clientX - this.panX, y: e.clientY - this.panY };
+            });
+
+            window.addEventListener('mouseup', () => this.isDragging = false);
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (this.isDragging) {
+                    this.panX = e.clientX - this.dragStart.x;
+                    this.panY = e.clientY - this.dragStart.y;
+                } else {
+                    this.handleCanvasMouseMove(e);
+                }
+            });
+
+            canvas.addEventListener('click', () => {
+                if (!this.isDragging && this.state.hoveredAgent) {
+                    this.inspectAgent(this.state.hoveredAgent.id);
+                }
             });
         }
+    }
+
+    setZoom(newZoom) {
+        this.zoom = Math.max(0.8, Math.min(3.5, newZoom));
     }
 
     async refreshAll() {
@@ -226,22 +310,22 @@ class MosaicPlanetaryApp {
         if (this.elements.partyVal) this.elements.partyVal.textContent = s.ruling_party || 'Council';
         if (this.elements.polRuling) this.elements.polRuling.textContent = s.ruling_party || 'Council';
         if (this.elements.eventsVal) this.elements.eventsVal.textContent = s.salient_events_count || 0;
-        if (this.elements.mapAgentCount) this.elements.mapAgentCount.textContent = `${s.living_population || 0} CITIZENS LIVE`;
+        if (this.elements.mapAgentCount) this.elements.mapAgentCount.textContent = `${s.living_population || 0} CITIZENS`;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // TOPOGRAPHICAL PLANETARY CANVAS SIMULATION ENGINE
+    // ULTRA-DETAILED SOLARIA PRIME MAP CANVAS ENGINE
     // ─────────────────────────────────────────────────────────────
-    initCanvas() {
+    initCanvasHD() {
         const canvas = this.elements.godsCanvas;
         if (!canvas) return;
 
         canvas.width = 1000;
-        canvas.height = 480;
+        canvas.height = 560;
 
         const renderLoop = () => {
-            this.updatePositionsLoop();
-            this.drawPlanetaryCanvas();
+            this.updateEnvironmentLoop();
+            this.drawUltraPlanetaryCanvas();
             requestAnimationFrame(renderLoop);
         };
         requestAnimationFrame(renderLoop);
@@ -252,8 +336,8 @@ class MosaicPlanetaryApp {
         const tick = this.state.status.tick || 0;
 
         agents.forEach((a, idx) => {
-            const cityKey = a.city_id in this.planetBiomes ? a.city_id : 'city_solaria';
-            const b = this.planetBiomes[cityKey];
+            const cityKey = a.city_id in this.citiesHD ? a.city_id : 'city_solaria';
+            const b = this.citiesHD[cityKey];
 
             const seed = (idx * 41 + tick * 19) % 360;
             const angle = (seed * Math.PI) / 180;
@@ -262,13 +346,13 @@ class MosaicPlanetaryApp {
             const targetX = b.x + Math.cos(angle) * dist;
             const targetY = b.y + Math.sin(angle) * dist;
 
-            let color = '#f4a261'; // Ochre
-            let activity = 'Working';
+            let color = '#f4a261'; // Work (Ochre)
+            let activity = 'work';
+            let actLabel = 'At Workplace';
 
-            if (idx % 4 === 0) { color = '#2d6a4f'; activity = 'At Home'; }
-            else if (idx % 6 === 0) { color = '#d97724'; activity = 'Assembly'; }
-            else if (idx % 9 === 0) { color = '#2a9d8f'; activity = 'Harbor Trade'; }
-            else if (a.wealth < 1000) { color = '#c25e40'; activity = 'Financial Distress'; }
+            if (idx % 4 === 0) { color = '#2d6a4f'; activity = 'home'; actLabel = 'At Residence'; }
+            else if (idx % 6 === 0) { color = '#d97724'; activity = 'rally'; actLabel = 'Political Assembly'; }
+            else if (a.wealth < 1000) { color = '#c25e40'; activity = 'stress'; actLabel = 'Financial Stress'; }
 
             if (!this.state.agentPositions.has(a.id)) {
                 this.state.agentPositions.set(a.id, {
@@ -281,7 +365,8 @@ class MosaicPlanetaryApp {
                     targetX,
                     targetY,
                     color,
-                    activity
+                    activity,
+                    actLabel
                 });
             } else {
                 const pos = this.state.agentPositions.get(a.id);
@@ -289,94 +374,235 @@ class MosaicPlanetaryApp {
                 pos.targetY = targetY;
                 pos.color = color;
                 pos.activity = activity;
+                pos.actLabel = actLabel;
             }
         });
     }
 
-    updatePositionsLoop() {
+    updateEnvironmentLoop() {
+        // Interpolate agent positions
         this.state.agentPositions.forEach(pos => {
             pos.x += (pos.targetX - pos.x) * 0.08;
             pos.y += (pos.targetY - pos.y) * 0.08;
         });
+
+        // Drift clouds
+        this.clouds.forEach(c => {
+            c.x += c.speed;
+            if (c.x > 1100) c.x = -100;
+        });
+
+        // Move cargo ships
+        this.ships.forEach(s => {
+            s.x += (s.targetX - s.x) * 0.005;
+            s.y += (s.targetY - s.y) * 0.005;
+            if (Math.hypot(s.targetX - s.x, s.targetY - s.y) < 10) {
+                const tempX = s.x; const tempY = s.y;
+                s.targetX = tempX === 150 ? 420 : 150;
+            }
+        });
+
+        // Emit factory smoke particles at Ironreach
+        if (Math.random() < 0.3) {
+            this.smokeParticles.push({
+                x: 340 + (Math.random() * 20 - 10),
+                y: 390,
+                radius: 4 + Math.random() * 4,
+                alpha: 0.6,
+                vy: -0.4 - Math.random() * 0.3
+            });
+        }
+
+        // Update smoke particles
+        for (let i = this.smokeParticles.length - 1; i >= 0; i--) {
+            const p = this.smokeParticles[i];
+            p.y += p.vy;
+            p.radius += 0.15;
+            p.alpha -= 0.008;
+            if (p.alpha <= 0) this.smokeParticles.splice(i, 1);
+        }
     }
 
-    drawPlanetaryCanvas() {
+    drawUltraPlanetaryCanvas() {
         const canvas = this.elements.godsCanvas;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const w = canvas.width;
         const h = canvas.height;
 
-        // Ocean Basin Fill
-        ctx.fillStyle = '#121920';
+        ctx.save();
+
+        // Dark Deep Ocean Base
+        ctx.fillStyle = '#0b1117';
         ctx.fillRect(0, 0, w, h);
 
-        // Draw Coastlines / Biomes
-        Object.values(this.planetBiomes).forEach(b => {
-            // Biome terrain glow
-            const grad = ctx.createRadialGradient(b.x, b.y, 10, b.x, b.y, b.radius);
-            grad.addColorStop(0, b.color + '44');
-            grad.addColorStop(1, b.color + '05');
-            ctx.fillStyle = grad;
+        // Apply Zoom & Pan Transform
+        ctx.translate(this.panX, this.panY);
+        ctx.scale(this.zoom, this.zoom);
+
+        // Draw Jagged Island Continental Landmass
+        ctx.fillStyle = '#17222d';
+        ctx.strokeStyle = '#2a9d8f';
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.moveTo(120, 180);
+        ctx.bezierCurveTo(180, 80, 420, 60, 600, 80);
+        ctx.bezierCurveTo(750, 100, 920, 180, 940, 320);
+        ctx.bezierCurveTo(900, 450, 680, 500, 450, 480);
+        ctx.bezierCurveTo(280, 460, 140, 420, 100, 300);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Shallow Reef Glow
+        ctx.strokeStyle = '#2a9d8f44';
+        ctx.lineWidth = 12;
+        ctx.stroke();
+
+        // Render Biome Contours & Textures
+        // 🌲 Veridia Forest Canopy (Green)
+        ctx.fillStyle = '#1e3a29';
+        ctx.beginPath();
+        ctx.arc(800, 320, 110, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#2d6a4f';
+        ctx.font = '10px sans-serif';
+        for (let i = 0; i < 15; i++) {
+            ctx.fillText('🌲', 740 + (i * 14 % 100), 280 + (i * 19 % 80));
+        }
+
+        // ⛰️ Ironreach Mountain Ridges (Terracotta & Snow Peaks)
+        ctx.fillStyle = '#3a2520';
+        ctx.beginPath();
+        ctx.arc(340, 400, 95, 0, Math.PI * 2);
+        ctx.fill();
+        // Snow Peaks
+        ctx.fillStyle = '#ffffffaa';
+        ctx.beginPath();
+        ctx.moveTo(320, 370); ctx.lineTo(330, 350); ctx.lineTo(340, 370);
+        ctx.moveTo(350, 380); ctx.lineTo(360, 360); ctx.lineTo(370, 380);
+        ctx.fill();
+
+        // 🏙️ Solaria Metropolis Urban Grid
+        ctx.fillStyle = '#3d2e23';
+        ctx.fillRect(480, 110, 140, 120);
+        ctx.fillStyle = '#f4a261aa';
+        for (let bx = 490; bx < 610; bx += 18) {
+            for (let by = 120; by < 220; by += 18) {
+                ctx.fillRect(bx, by, 10, 10);
+            }
+        }
+
+        // 🚢 Aethelgard Port & Docks
+        ctx.fillStyle = '#1b333a';
+        ctx.beginPath();
+        ctx.arc(220, 240, 90, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2a9d8f';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(180, 250); ctx.lineTo(140, 250);
+        ctx.moveTo(200, 270); ctx.lineTo(160, 270);
+        ctx.stroke();
+
+        // Highways & Bridges Layer
+        if (this.layers.roads) {
+            ctx.strokeStyle = '#d9772488';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([6, 6]);
+
             ctx.beginPath();
-            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Biome contour border
-            ctx.strokeStyle = b.color + 'aa';
-            ctx.lineWidth = 2;
+            ctx.moveTo(550, 170); ctx.lineTo(220, 240); // Solaria -> Port
+            ctx.moveTo(550, 170); ctx.lineTo(340, 400); // Solaria -> Ironreach
+            ctx.moveTo(550, 170); ctx.lineTo(800, 320); // Solaria -> Veridia
+            ctx.moveTo(220, 240); ctx.lineTo(340, 400); // Port -> Ironreach
             ctx.stroke();
+            ctx.setLineDash([]);
+        }
 
-            // Biome Title
+        // Cargo Ships Layer
+        if (this.layers.ships) {
+            this.ships.forEach(s => {
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('🚢', s.x, s.y);
+            });
+        }
+
+        // Factory Chimney Smoke Particles
+        this.smokeParticles.forEach(p => {
+            ctx.fillStyle = `rgba(200, 200, 200, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // City Labels
+        Object.values(this.citiesHD).forEach(c => {
             ctx.fillStyle = '#f8f5ee';
             ctx.font = 'bold 12px "Chakra Petch", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(b.name.toUpperCase(), b.x, b.y - b.radius - 6);
+            ctx.fillText(c.name.toUpperCase(), c.x, c.y - c.radius - 8);
         });
 
-        // Trade Roads
-        ctx.strokeStyle = '#26323e';
-        ctx.lineWidth = 3;
-        const bm = Object.values(this.planetBiomes);
-        ctx.beginPath();
-        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[1].x, bm[1].y);
-        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[2].x, bm[2].y);
-        ctx.moveTo(bm[0].x, bm[0].y); ctx.lineTo(bm[3].x, bm[3].y);
-        ctx.stroke();
+        // Agent Swarm Layer
+        if (this.layers.agents) {
+            this.state.agentPositions.forEach(pos => {
+                // Apply activity filter
+                if (this.activeFilter !== 'all' && pos.activity !== this.activeFilter) return;
 
-        // Render Agent Swarm Sprites
-        this.state.agentPositions.forEach(pos => {
-            const isHovered = this.state.hoveredAgent?.id === pos.id;
+                const isHovered = this.state.hoveredAgent?.id === pos.id;
 
-            ctx.fillStyle = pos.color;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, isHovered ? 8 : 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.strokeStyle = '#121920';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            if (isHovered) {
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2;
+                ctx.fillStyle = pos.color;
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 11, 0, Math.PI * 2);
+                ctx.arc(pos.x, pos.y, isHovered ? 8 : 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#0b1117';
+                ctx.lineWidth = 1;
                 ctx.stroke();
-            }
-        });
+
+                if (isHovered) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 11, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // Drifting Clouds Layer
+        if (this.layers.clouds) {
+            this.clouds.forEach(c => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+                ctx.arc(c.x + 30, c.y - 10, c.size * 0.75, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        ctx.restore();
     }
 
     handleCanvasMouseMove(e) {
         const canvas = this.elements.godsCanvas;
         const rect = canvas.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        // Transformed mouse coordinates accounting for Zoom & Pan
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+
+        const worldX = (screenX - this.panX) / this.zoom;
+        const worldY = (screenY - this.panY) / this.zoom;
 
         let found = null;
         this.state.agentPositions.forEach(pos => {
-            const dist = Math.hypot(pos.x - mouseX, pos.y - mouseY);
-            if (dist < 10) found = pos;
+            if (this.activeFilter !== 'all' && pos.activity !== this.activeFilter) return;
+            const dist = Math.hypot(pos.x - worldX, pos.y - worldY);
+            if (dist < 12) found = pos;
         });
 
         this.state.hoveredAgent = found;
@@ -384,26 +610,17 @@ class MosaicPlanetaryApp {
 
         if (found && tooltip) {
             tooltip.style.display = 'block';
-            tooltip.style.left = `${e.clientX + 12}px`;
-            tooltip.style.top = `${e.clientY + 12}px`;
+            tooltip.style.left = `${e.clientX + 14}px`;
+            tooltip.style.top = `${e.clientY + 14}px`;
             tooltip.innerHTML = `
-                <strong>${found.name}</strong> (${found.occupation})<br/>
-                <span>📍 ${found.city}</span> • <span style="color:var(--earth-terracotta);">${found.activity}</span>
+                <strong style="font-family:var(--font-blocky);">${found.name}</strong> (${found.occupation})<br/>
+                <span>📍 ${found.city}</span> • <strong style="color:var(--earth-terracotta);">${found.actLabel}</strong>
             `;
         } else if (tooltip) {
             tooltip.style.display = 'none';
         }
     }
 
-    handleCanvasClick() {
-        if (this.state.hoveredAgent) {
-            this.inspectAgent(this.state.hoveredAgent.id);
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // OTHER DOMAIN BOXES & INSPECTOR
-    // ─────────────────────────────────────────────────────────────
     renderSparkline() {
         const hist = this.state.history;
         const canvas = this.elements.gdpCanvas;
@@ -515,5 +732,5 @@ class MosaicPlanetaryApp {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new MosaicPlanetaryApp();
+    window.app = new MosaicUltraPlanetaryApp();
 });
