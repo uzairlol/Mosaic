@@ -12,12 +12,12 @@ def ensure_ollama_service():
     try:
         r = requests.get("http://localhost:11434/api/tags", timeout=2.0)
         if r.status_code == 200:
-            print("[Ollama Manager] ✅ Ollama service active on http://localhost:11434")
+            print("[Ollama Manager] [OK] Ollama service active on http://localhost:11434")
             return
     except Exception:
         pass
 
-    print("[Ollama Manager] ⚡ Auto-launching local Ollama background service...")
+    print("[Ollama Manager] [LAUNCH] Auto-launching local Ollama background service...")
     launched = False
     try:
         flags = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
@@ -35,7 +35,7 @@ def ensure_ollama_service():
         try:
             r = requests.get("http://localhost:11434/api/tags", timeout=1.0)
             if r.status_code == 200:
-                print("[Ollama Manager] ✅ Ollama background service launched successfully!")
+                print("[Ollama Manager] [OK] Ollama background service launched successfully!")
                 return
         except Exception:
             continue

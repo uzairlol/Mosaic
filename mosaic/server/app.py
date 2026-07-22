@@ -1,20 +1,20 @@
 import os
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from mosaic.core.tick_engine import SimulationEngine
 
-app = FastAPI(title="Mosaic - Persistent Artificial Civilization API", version="1.0.0")
+app = FastAPI(title="Mosaic - Persistent Artificial Civilization API", version="2.0.0")
 
 # Global Engine Instance
 engine = SimulationEngine(master_seed=42)
 engine.initialize_new_world(population=500)
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+WIKI_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "wiki_data")
 os.makedirs(WEB_DIR, exist_ok=True)
 
-# Static files for front-end
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
 @app.get("/", response_class=HTMLResponse)
@@ -36,7 +36,8 @@ def get_simulation_status():
         "living_population": living_count,
         "monthly_gdp": engine.economy.total_gdp,
         "ruling_party": engine.politics.ruling_party_id or "Local Councils",
-        "salient_events_count": len(engine.causal_graph.nodes)
+        "salient_events_count": len(engine.causal_graph.nodes),
+        "total_rumors": len(engine.media.rumors)
     }
 
 @app.post("/api/step")
@@ -79,8 +80,16 @@ def get_agent_dossier(agent_id: str):
     memories = engine.agent_memories.get(agent_id)
     events = engine.causal_graph.get_agent_events(agent_id)
     
+    # Spouse & children names
+    spouse_name = engine.agents[agent.spouse_id].full_name if agent.spouse_id and agent.spouse_id in engine.agents else "Unmarried"
+    children = [engine.agents[cid].full_name for cid in agent.children_ids if cid in engine.agents]
+    parents = [engine.agents[pid].full_name for pid in agent.parent_ids if pid in engine.agents]
+
     return {
         "identity": agent.to_dict(),
+        "spouse_name": spouse_name,
+        "children_names": children,
+        "parent_names": parents,
         "salient_memories": [m.to_dict() for m in (memories.get_salient_memories(engine.tick) if memories else [])],
         "historical_events": [e.to_dict() for e in events]
     }
@@ -107,7 +116,8 @@ def get_politics_overview():
 def get_sim_social_feed(limit: int = 25):
     return {
         "feed": [p.to_dict() for p in engine.media.get_feed(limit)],
-        "trending": engine.media.trending_hashtags
+        "trending": engine.media.trending_hashtags,
+        "rumors_count": len(engine.media.rumors)
     }
 
 @app.get("/api/causal/explain/{event_id}")
@@ -119,3 +129,24 @@ def get_all_causal_events(limit: int = 50):
     nodes = list(engine.causal_graph.nodes.values())
     sorted_nodes = sorted(nodes, key=lambda n: n.tick, reverse=True)
     return [n.to_dict() for n in sorted_nodes[:limit]]
+
+@app.get("/api/wiki/list")
+def get_wiki_index():
+    result = {"cities": [], "people": []}
+    cities_dir = os.path.join(WIKI_DIR, "cities")
+    people_dir = os.path.join(WIKI_DIR, "people")
+    
+    if os.path.exists(cities_dir):
+        result["cities"] = [f.replace(".md", "") for f in os.listdir(cities_dir) if f.endswith(".md")]
+    if os.path.exists(people_dir):
+        result["people"] = [f.replace(".md", "") for f in os.listdir(people_dir) if f.endswith(".md")]
+        
+    return result
+
+@app.get("/api/wiki/read/{category}/{entity_id}")
+def read_wiki_article(category: str, entity_id: str):
+    file_path = os.path.join(WIKI_DIR, category, f"{entity_id}.md")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Encyclopedia entry not found")
+    with open(file_path, "r", encoding="utf-8") as f:
+        return {"category": category, "entity_id": entity_id, "markdown": f.read()}

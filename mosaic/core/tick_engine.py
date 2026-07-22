@@ -105,8 +105,35 @@ class SimulationEngine:
                 # Inheritance Execution
                 KinshipEngine.execute_inheritance(agent, self.agents)
 
-        # 2. Macro Deliberative Choices via LLM
+        # 2. Inter-City Migration Engine
         living_agents = [a for a in self.agents.values() if a.is_alive]
+        for agent in living_agents:
+            if (agent.happiness < 0.45 or agent.wealth < 1000.0) and tick_prng.random() < 0.08:
+                other_cities = [cid for cid in self.cities.keys() if cid != agent.city_id]
+                new_city_id = tick_prng.choice(other_cities)
+                old_city_id = agent.city_id
+                
+                if old_city_id not in agent.city_history:
+                    agent.city_history.append(old_city_id)
+                agent.city_id = new_city_id
+                agent.monthly_rent_or_mortgage = self.cities[new_city_id].cost_of_living_index * 800.0
+                
+                mig_node = CausalNode(
+                    id=f"evt_migration_t{self.tick}_{agent.id}",
+                    tick=self.tick,
+                    year=self.year,
+                    month=self.month,
+                    event_type="MIGRATION",
+                    title=f"{agent.full_name} Relocates to {new_city_id.replace('city_', '').capitalize()}",
+                    description=f"Seeking fresh economic opportunities, {agent.full_name} moved from {old_city_id.replace('city_', '').capitalize()} to {new_city_id.replace('city_', '').capitalize()}.",
+                    primary_agent_id=agent.id,
+                    location_city=new_city_id,
+                    impact_salience=0.5
+                )
+                self.causal_graph.add_event(mig_node)
+                current_salient_events.append(mig_node)
+
+        # 3. Macro Deliberative Choices via LLM (Marriage, Company Founding, Politics, Crime)
         if living_agents:
             # A. Marriage Proposal Trigger
             single_adults = [a for a in living_agents if 20 <= a.age <= 55 and not a.spouse_id]
@@ -198,7 +225,36 @@ class SimulationEngine:
                     self.causal_graph.add_event(pol_node)
                     current_salient_events.append(pol_node)
 
-        # 3. Socio-Economic Step
+            # D. Crimes & Scandals Trigger (Low conscientiousness or high financial stress)
+            desperate_agents = [a for a in living_agents if a.wealth < 500.0 or a.personality.conscientiousness < 0.35]
+            if desperate_agents and tick_prng.random() < 0.25:
+                suspect = tick_prng.choice(desperate_agents)
+                delib = self.llm_gateway.deliberate_macro_event(
+                    suspect, self.agent_memories[suspect.id], "CRIME_TEMPTATION",
+                    {"financial_stress": suspect.wealth < 0}, tick_prng
+                )
+                if delib.get("commit_crime"):
+                    crime_type = delib.get("crime_type", "Corporate Embezzlement")
+                    suspect.is_in_scandal = True
+                    suspect.reputation = max(0.1, suspect.reputation - 0.35)
+                    suspect.criminal_record.append(crime_type)
+                    
+                    crime_node = CausalNode(
+                        id=f"evt_crime_t{self.tick}_{suspect.id}",
+                        tick=self.tick,
+                        year=self.year,
+                        month=self.month,
+                        event_type="SCANDAL_CRIME",
+                        title=f"Public Scandal: {suspect.full_name} Implicated in {crime_type}",
+                        description=f"Investigative authorities revealed {suspect.full_name} was involved in {crime_type} in {suspect.city_id}.",
+                        primary_agent_id=suspect.id,
+                        location_city=suspect.city_id,
+                        impact_salience=0.8
+                    )
+                    self.causal_graph.add_event(crime_node)
+                    current_salient_events.append(crime_node)
+
+        # 4. Socio-Economic Step
         econ_res = self.economy.step_economy(self.agents, self.cities, tick_prng)
         for comp_id in econ_res.get("bankruptcies", []):
             b_node = CausalNode(
@@ -215,7 +271,7 @@ class SimulationEngine:
             self.causal_graph.add_event(b_node)
             current_salient_events.append(b_node)
 
-        # 4. Political Step
+        # 5. Political Step
         political_res = self.politics.step_politics(self.tick, self.agents, tick_prng)
         if "ELECTION_HELD" in political_res.get("events", []):
             el_res = political_res.get("election_results", {})
@@ -234,19 +290,20 @@ class SimulationEngine:
             self.causal_graph.add_event(el_node)
             current_salient_events.append(el_node)
 
-        # 5. Sim-Social Media Feed ("Echo")
+        # 6. Sim-Social Media Feed ("Echo") with LLM post generation
         echo_posts = self.media.generate_agent_posts_for_tick(
-            self.tick, self.year, self.month, current_salient_events, self.agents, tick_prng
+            self.tick, self.year, self.month, current_salient_events,
+            self.agents, self.llm_gateway, self.agent_memories, tick_prng
         )
 
-        # 6. Automated Historian Newspaper
+        # 7. Automated Historian Newspaper
         gazette = AutomatedHistorianNewspaper.generate_issue(
             self.tick, self.year, self.month, current_salient_events,
             econ_res, political_res, echo_posts
         )
         self.newspapers.append(gazette)
 
-        # 7. Update Wiki Articles for top changed agents & cities
+        # 8. Update Wiki Articles for cities
         for city in self.cities.values():
             residents = [a for a in self.agents.values() if a.city_id == city.id and a.is_alive]
             self.wiki.generate_city_article(city, len(residents))

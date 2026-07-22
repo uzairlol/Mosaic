@@ -3,6 +3,25 @@ from typing import Dict, Any, List, Optional
 from mosaic.agents.identity import AgentIdentity
 
 @dataclass
+class PolicyBill:
+    id: str
+    title: str
+    description: str
+    proposed_by_party_id: str
+    tax_rate_change: float = 0.0
+    passed: bool = False
+    votes_for: int = 0
+    votes_against: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PolicyBill":
+        return cls(**data)
+
+
+@dataclass
 class PoliticalParty:
     id: str
     name: str
@@ -13,6 +32,7 @@ class PoliticalParty:
     member_ids: List[str] = field(default_factory=list)
     seats_in_parliament: int = 0
     public_approval_rating: float = 0.5
+    is_in_scandal: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__
@@ -25,13 +45,14 @@ class PoliticalParty:
 class PoliticalSystem:
     """
     Manages political parties, civic elections, parliamentary seat allocations,
-    public sentiment tracking, and policy decisions.
+    legislative bill voting, scandals, and public approval tracking.
     """
     def __init__(self):
         self.parties: Dict[str, PoliticalParty] = {}
         self.ruling_party_id: Optional[str] = None
         self.last_election_tick: int = 0
         self.next_election_tick: int = 24  # Elections every 2 years (24 ticks)
+        self.bills_passed: List[PolicyBill] = []
 
     def add_party(self, party: PoliticalParty):
         self.parties[party.id] = party
@@ -40,14 +61,35 @@ class PoliticalSystem:
         events = []
         election_results = None
 
-        # Check if election is due
+        # 1. Parliamentary Policy Bill Voting
+        if self.ruling_party_id and prng.random() < 0.25:
+            ruling_party = self.parties.get(self.ruling_party_id)
+            if ruling_party:
+                bill = PolicyBill(
+                    id=f"bill_t{current_tick}",
+                    title=f"Civic Infrastructure & Tax Reform Bill of Year {2026 + (current_tick-1)//12}",
+                    description=f"Proposed by {ruling_party.name} to optimize municipal services and tax policy.",
+                    proposed_by_party_id=ruling_party.id,
+                    tax_rate_change=prng.choice([-0.01, 0.01])
+                )
+                # Parliament votes based on seats
+                votes_for = ruling_party.seats_in_parliament
+                votes_against = 100 - votes_for
+                bill.votes_for = votes_for
+                bill.votes_against = votes_against
+                if votes_for > votes_against:
+                    bill.passed = True
+                    self.bills_passed.append(bill)
+                    events.append(f"BILL_PASSED:{bill.title}")
+
+        # 2. Check if election is due
         if current_tick >= self.next_election_tick and self.parties:
             election_results = self.hold_election(current_tick, agents, prng)
             self.last_election_tick = current_tick
             self.next_election_tick = current_tick + 24
             events.append("ELECTION_HELD")
 
-        # Update Party Approvals based on agent sentiments
+        # 3. Update Party Approvals
         for party in self.parties.values():
             aligned_agents = [
                 a for a in agents.values()
@@ -64,14 +106,12 @@ class PoliticalSystem:
         }
 
     def hold_election(self, current_tick: int, agents: Dict[str, AgentIdentity], prng) -> Dict[str, Any]:
-        """Simulates democratic election based on 500 agents voting according to political orientation & party alignment."""
         votes = {pid: 0 for pid in self.parties}
 
         for agent in agents.values():
             if not agent.is_alive or agent.age < 18:
                 continue
 
-            # Find closest party to agent's political values
             best_party_id = None
             min_diff = 999.0
             for party_id, party in self.parties.items():
@@ -87,7 +127,6 @@ class PoliticalSystem:
         winner_id = max(votes, key=votes.get) if votes else None
         self.ruling_party_id = winner_id
 
-        # Allocate 100 parliamentary seats proportionally
         for party_id, party in self.parties.items():
             if total_votes > 0:
                 party.seats_in_parliament = int((votes[party_id] / total_votes) * 100)
@@ -107,7 +146,8 @@ class PoliticalSystem:
             "parties": {pid: party.to_dict() for pid, party in self.parties.items()},
             "ruling_party_id": self.ruling_party_id,
             "last_election_tick": self.last_election_tick,
-            "next_election_tick": self.next_election_tick
+            "next_election_tick": self.next_election_tick,
+            "bills_passed": [b.to_dict() for b in self.bills_passed]
         }
 
     def load_dict(self, data: Dict[str, Any]):
@@ -115,3 +155,4 @@ class PoliticalSystem:
         self.ruling_party_id = data.get("ruling_party_id")
         self.last_election_tick = data.get("last_election_tick", 0)
         self.next_election_tick = data.get("next_election_tick", 24)
+        self.bills_passed = [PolicyBill.from_dict(b) for b in data.get("bills_passed", [])]

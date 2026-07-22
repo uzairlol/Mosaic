@@ -34,28 +34,31 @@ class AgentIdentity:
     children_ids: List[str] = field(default_factory=list)
     
     # Socio-Economic
-    education_level: str = "High School" # High School, Bachelor, Master, PhD, Trade
+    education_level: str = "High School"
     occupation: str = "Unemployed"
     company_id: Optional[str] = None
     monthly_income: float = 3000.0
     wealth: float = 10000.0
     savings: float = 5000.0
-    housing_status: str = "Renting" # Renting, Homeowner, Homeless
+    housing_status: str = "Renting"
     monthly_rent_or_mortgage: float = 800.0
     
     # Psychology & Traits
     personality: PersonalityTraits = field(default_factory=PersonalityTraits)
     values: ValuesBeliefs = field(default_factory=ValuesBeliefs)
-    ambition: str = "Financial Stability"  # Ambitions: Wealth, Political Power, Family, Fame, Science, Art
-    happiness: float = 0.7  # 0.0 to 1.0
-    health: float = 0.9     # 0.0 to 1.0 (0 = dead)
+    ambition: str = "Financial Stability"
+    happiness: float = 0.7
+    health: float = 0.9
     is_alive: bool = True
     
-    # Reputation & Social
+    # Reputation, Social & Migration
     reputation: float = 0.5
     friend_ids: List[str] = field(default_factory=list)
     rival_ids: List[str] = field(default_factory=list)
     political_party_id: Optional[str] = None
+    city_history: List[str] = field(default_factory=list)  # History of cities lived in
+    is_in_scandal: bool = False
+    criminal_record: List[str] = field(default_factory=list)
     
     # Skills dictionary (skill_name -> proficiency 0.0-1.0)
     skills: Dict[str, float] = field(default_factory=lambda: {
@@ -98,6 +101,9 @@ class AgentIdentity:
             "friend_ids": self.friend_ids,
             "rival_ids": self.rival_ids,
             "political_party_id": self.political_party_id,
+            "city_history": self.city_history,
+            "is_in_scandal": self.is_in_scandal,
+            "criminal_record": self.criminal_record,
             "skills": self.skills
         }
 
