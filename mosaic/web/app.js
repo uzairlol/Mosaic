@@ -1,10 +1,10 @@
 /**
- * MOSAIC — Artificial Civilization Telemetry Observer Client App
+ * MOSAIC — Artificial Civilization God's Eye Observer App
+ * Features real-time 2D simulation canvas & pastel neo-brutalist interactive UI
  */
 
-class MosaicApp {
+class MosaicGodsEyeApp {
     constructor() {
-        this.apiBase = '';
         this.autoPlayTimer = null;
         this.autoPlaySpeed = 2000;
         this.isStepping = false;
@@ -16,23 +16,32 @@ class MosaicApp {
             agents: [],
             echoFeed: [],
             latestNewspaper: null,
-            causalEvents: [],
-            selectedAgent: null
+            agentPositions: new Map(), // agent_id -> { x, y, targetX, targetY, color, activity, city }
+            hoveredAgent: null
+        };
+
+        // City Map Node Centers on 2D Canvas (1000x500 resolution)
+        this.cityNodes = {
+            city_solaria: { name: 'City Solaria', x: 500, y: 150, radius: 110, color: '#fef08a' },
+            city_aethelgard: { name: 'Aethelgard Docks', x: 200, y: 220, radius: 95, color: '#bae6fd' },
+            city_ironreach: { name: 'Ironreach Foundries', x: 300, y: 380, radius: 90, color: '#fecdd3' },
+            city_veridia: { name: 'Veridia Tech Valley', x: 750, y: 320, radius: 100, color: '#a7f3d0' }
         };
 
         this.initDOM();
         this.bindEvents();
+        this.initCanvas();
         this.refreshAll();
     }
 
     initDOM() {
         this.elements = {
             dateStr: document.getElementById('val-date'),
-            tickVal: document.getElementById('val-tick'),
             gdpVal: document.getElementById('val-gdp'),
             popVal: document.getElementById('val-pop'),
             partyVal: document.getElementById('val-party'),
             eventsVal: document.getElementById('val-events'),
+            tickBadge: document.getElementById('canvas-tick-badge'),
 
             btnStep: document.getElementById('btn-step'),
             btnStep6: document.getElementById('btn-step6'),
@@ -41,6 +50,10 @@ class MosaicApp {
 
             tabBtns: document.querySelectorAll('.tab-btn'),
             tabPanels: document.querySelectorAll('.tab-panel'),
+
+            godsCanvas: document.getElementById('gods-canvas'),
+            mapTooltip: document.getElementById('map-tooltip'),
+            mapAgentCount: document.getElementById('map-agent-count'),
 
             gdpCanvas: document.getElementById('canvas-gdp'),
             popCanvas: document.getElementById('canvas-pop'),
@@ -52,7 +65,6 @@ class MosaicApp {
 
             echoFeed: document.getElementById('echo-feed'),
             newspaperContainer: document.getElementById('newspaper-container'),
-            causalTimeline: document.getElementById('causal-timeline'),
 
             drawerBackdrop: document.getElementById('drawer-backdrop'),
             drawerClose: document.getElementById('drawer-close'),
@@ -61,11 +73,9 @@ class MosaicApp {
     }
 
     bindEvents() {
-        // Step buttons
         this.elements.btnStep.addEventListener('click', () => this.stepSimulation(1));
         this.elements.btnStep6.addEventListener('click', () => this.stepSimulation(6));
-        
-        // Auto Play Toggle
+
         this.elements.btnPlay.addEventListener('click', () => this.toggleAutoPlay());
         this.elements.speedSelect.addEventListener('change', (e) => {
             this.autoPlaySpeed = parseInt(e.target.value, 10);
@@ -75,7 +85,6 @@ class MosaicApp {
             }
         });
 
-        // Tabs
         this.elements.tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetTab = btn.dataset.tab;
@@ -83,7 +92,6 @@ class MosaicApp {
             });
         });
 
-        // Agent Filters
         if (this.elements.agentSearch) {
             this.elements.agentSearch.addEventListener('input', () => this.renderAgentsGrid());
         }
@@ -91,13 +99,22 @@ class MosaicApp {
             this.elements.cityFilter.addEventListener('change', () => this.renderAgentsGrid());
         }
 
-        // Drawer Close
         if (this.elements.drawerClose) {
             this.elements.drawerClose.addEventListener('click', () => this.closeDrawer());
         }
         if (this.elements.drawerBackdrop) {
             this.elements.drawerBackdrop.addEventListener('click', (e) => {
                 if (e.target === this.elements.drawerBackdrop) this.closeDrawer();
+            });
+        }
+
+        // Canvas Mouse Events
+        if (this.elements.godsCanvas) {
+            this.elements.godsCanvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
+            this.elements.godsCanvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+            this.elements.godsCanvas.addEventListener('mouseleave', () => {
+                this.state.hoveredAgent = null;
+                if (this.elements.mapTooltip) this.elements.mapTooltip.style.display = 'none';
             });
         }
     }
@@ -110,28 +127,25 @@ class MosaicApp {
             panel.classList.toggle('active', panel.id === `tab-${tabId}`);
         });
 
-        // Lazy load tab contents if needed
         if (tabId === 'agents' && this.state.agents.length === 0) this.fetchAgents();
         if (tabId === 'echo') this.fetchEchoFeed();
         if (tabId === 'newspaper') this.fetchNewspaper();
-        if (tabId === 'causal') this.fetchCausalEvents();
     }
 
     async refreshAll() {
         await Promise.all([
             this.fetchStatus(),
             this.fetchHistory(),
-            this.fetchCities()
+            this.fetchCities(),
+            this.fetchAgents()
         ]);
         this.renderTelemetry();
-        this.renderSparklines();
         this.renderCities();
 
         const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
-        if (activeTab === 'agents') this.fetchAgents();
         if (activeTab === 'echo') this.fetchEchoFeed();
         if (activeTab === 'newspaper') this.fetchNewspaper();
-        if (activeTab === 'causal') this.fetchCausalEvents();
+        if (activeTab === 'overview') this.renderSparklines();
     }
 
     async fetchStatus() {
@@ -139,7 +153,7 @@ class MosaicApp {
             const res = await fetch('/api/status');
             this.state.status = await res.json();
         } catch (e) {
-            console.error('Failed to fetch simulation status:', e);
+            console.error('Failed to fetch status:', e);
         }
     }
 
@@ -148,7 +162,7 @@ class MosaicApp {
             const res = await fetch('/api/history');
             this.state.history = await res.json();
         } catch (e) {
-            console.error('Failed to fetch simulation history:', e);
+            console.error('Failed to fetch history:', e);
         }
     }
 
@@ -163,8 +177,9 @@ class MosaicApp {
 
     async fetchAgents() {
         try {
-            const res = await fetch('/api/agents?limit=100');
+            const res = await fetch('/api/agents?limit=250');
             this.state.agents = await res.json();
+            this.updateAgentPositions();
             this.renderAgentsGrid();
         } catch (e) {
             console.error('Failed to fetch agents:', e);
@@ -173,7 +188,7 @@ class MosaicApp {
 
     async fetchEchoFeed() {
         try {
-            const res = await fetch('/api/echo?limit=35');
+            const res = await fetch('/api/echo?limit=30');
             const data = await res.json();
             this.state.echoFeed = data.feed || [];
             this.renderEchoFeed();
@@ -192,16 +207,6 @@ class MosaicApp {
         }
     }
 
-    async fetchCausalEvents() {
-        try {
-            const res = await fetch('/api/causal/events?limit=40');
-            this.state.causalEvents = await res.json();
-            this.renderCausalTimeline();
-        } catch (e) {
-            console.error('Failed to fetch causal events:', e);
-        }
-    }
-
     async stepSimulation(months = 1) {
         if (this.isStepping) return;
         this.isStepping = true;
@@ -216,16 +221,13 @@ class MosaicApp {
         } finally {
             this.isStepping = false;
             this.elements.btnStep.disabled = false;
-            this.elements.btnStep.innerHTML = '▶ Step 1 Month';
+            this.elements.btnStep.innerHTML = '⚡ Step Month';
         }
     }
 
     toggleAutoPlay() {
-        if (this.autoPlayTimer) {
-            this.stopAutoPlay();
-        } else {
-            this.startAutoPlay();
-        }
+        if (this.autoPlayTimer) this.stopAutoPlay();
+        else this.startAutoPlay();
     }
 
     startAutoPlay() {
@@ -249,47 +251,216 @@ class MosaicApp {
         const s = this.state.status;
         if (!s) return;
         if (this.elements.dateStr) this.elements.dateStr.textContent = s.date_str || `Month ${s.tick}`;
-        if (this.elements.tickVal) this.elements.tickVal.textContent = `Tick #${s.tick || 0}`;
+        if (this.elements.tickBadge) this.elements.tickBadge.textContent = `#${s.tick || 0}`;
         if (this.elements.gdpVal) this.elements.gdpVal.textContent = `$${(s.monthly_gdp || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         if (this.elements.popVal) this.elements.popVal.textContent = `${s.living_population || 0} / ${s.total_population || 0}`;
         if (this.elements.partyVal) this.elements.partyVal.textContent = s.ruling_party || 'Council';
         if (this.elements.eventsVal) this.elements.eventsVal.textContent = s.salient_events_count || 0;
+        if (this.elements.mapAgentCount) this.elements.mapAgentCount.textContent = `${s.living_population || 0} AGENTS LIVE`;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // GOD'S EYE 2D MAP CANVAS SIMULATION ENGINE
+    // ─────────────────────────────────────────────────────────────
+    initCanvas() {
+        const canvas = this.elements.godsCanvas;
+        if (!canvas) return;
+
+        // Set high DPR resolution
+        canvas.width = 1000;
+        canvas.height = 500;
+
+        // Start render loop
+        const renderLoop = () => {
+            this.updatePositionsLoop();
+            this.drawGodsEyeCanvas();
+            requestAnimationFrame(renderLoop);
+        };
+        requestAnimationFrame(renderLoop);
+    }
+
+    updateAgentPositions() {
+        const agents = this.state.agents;
+        const tick = this.state.status.tick || 0;
+
+        agents.forEach((a, idx) => {
+            const cityKey = a.city_id in this.cityNodes ? a.city_id : 'city_solaria';
+            const node = this.cityNodes[cityKey];
+
+            // Deterministic position inside city circle based on agent index and tick
+            const seed = (idx * 37 + tick * 17) % 360;
+            const angle = (seed * Math.PI) / 180;
+            const dist = 15 + ((idx * 13) % (node.radius - 25));
+
+            const targetX = node.x + Math.cos(angle) * dist;
+            const targetY = node.y + Math.sin(angle) * dist;
+
+            // Status color & activity
+            let color = '#38bdf8'; // Workplace
+            let activity = 'At Work';
+
+            if (idx % 5 === 0) { color = '#10b981'; activity = 'At Residence'; }
+            else if (idx % 7 === 0) { color = '#f59e0b'; activity = 'Political Assembly'; }
+            else if (idx % 11 === 0) { color = '#a855f7'; activity = 'Market Plaza'; }
+            else if (a.wealth < 1000) { color = '#f43f5e'; activity = 'Financial Stress'; }
+
+            if (!this.state.agentPositions.has(a.id)) {
+                this.state.agentPositions.set(a.id, {
+                    id: a.id,
+                    name: a.full_name,
+                    occupation: a.occupation,
+                    city: node.name,
+                    x: targetX,
+                    y: targetY,
+                    targetX,
+                    targetY,
+                    color,
+                    activity
+                });
+            } else {
+                const pos = this.state.agentPositions.get(a.id);
+                pos.targetX = targetX;
+                pos.targetY = targetY;
+                pos.color = color;
+                pos.activity = activity;
+            }
+        });
+    }
+
+    updatePositionsLoop() {
+        // Interpolate movement smoothly
+        this.state.agentPositions.forEach(pos => {
+            pos.x += (pos.targetX - pos.x) * 0.08;
+            pos.y += (pos.targetY - pos.y) * 0.08;
+        });
+    }
+
+    drawGodsEyeCanvas() {
+        const canvas = this.elements.godsCanvas;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Background
+        ctx.fillStyle = '#181825';
+        ctx.fillRect(0, 0, w, h);
+
+        // Draw connecting highways between cities
+        ctx.strokeStyle = '#32324a';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([8, 6]);
+
+        const nodes = Object.values(this.cityNodes);
+        ctx.beginPath();
+        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[1].x, nodes[1].y);
+        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[2].x, nodes[2].y);
+        ctx.moveTo(nodes[0].x, nodes[0].y); ctx.lineTo(nodes[3].x, nodes[3].y);
+        ctx.moveTo(nodes[1].x, nodes[1].y); ctx.lineTo(nodes[2].x, nodes[2].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw City Zones
+        Object.values(this.cityNodes).forEach(node => {
+            // Fill circle
+            ctx.fillStyle = node.color + '1f'; // 12% opacity
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Thick border
+            ctx.strokeStyle = node.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // City Label
+            ctx.fillStyle = '#f4f0fa';
+            ctx.font = 'bold 13px "Chakra Petch", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(node.name.toUpperCase(), node.x, node.y - node.radius - 8);
+        });
+
+        // Draw Agent Sprites
+        this.state.agentPositions.forEach(pos => {
+            const isHovered = this.state.hoveredAgent?.id === pos.id;
+
+            ctx.fillStyle = pos.color;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, isHovered ? 8 : 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#181825';
+            ctx.lineWidth = isHovered ? 2 : 1;
+            ctx.stroke();
+
+            if (isHovered) {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 11, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        });
+    }
+
+    handleCanvasMouseMove(e) {
+        const canvas = this.elements.godsCanvas;
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+        let found = null;
+        this.state.agentPositions.forEach(pos => {
+            const dist = Math.hypot(pos.x - mouseX, pos.y - mouseY);
+            if (dist < 10) found = pos;
+        });
+
+        this.state.hoveredAgent = found;
+        const tooltip = this.elements.mapTooltip;
+
+        if (found && tooltip) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${e.clientX + 12}px`;
+            tooltip.style.top = `${e.clientY + 12}px`;
+            tooltip.innerHTML = `
+                <strong>${found.name}</strong> (${found.occupation})<br/>
+                <span>📍 ${found.city}</span> • <span style="color:#181825;">${found.activity}</span>
+            `;
+        } else if (tooltip) {
+            tooltip.style.display = 'none';
+        }
+    }
+
+    handleCanvasClick(e) {
+        if (this.state.hoveredAgent) {
+            this.inspectAgent(this.state.hoveredAgent.id);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // TELEMETRY & OTHER VIEWS
+    // ─────────────────────────────────────────────────────────────
     renderSparklines() {
         const hist = this.state.history;
         if (!hist || hist.length === 0) return;
-
-        // GDP Sparkline
-        this.drawSparkline(this.elements.gdpCanvas, hist.map(h => h.gdp), '#10b981');
-        // Population Sparkline
-        this.drawSparkline(this.elements.popCanvas, hist.map(h => h.living_population), '#38bdf8');
+        this.drawSparkline(this.elements.gdpCanvas, hist.map(h => h.gdp), '#a7f3d0');
+        this.drawSparkline(this.elements.popCanvas, hist.map(h => h.living_population), '#bae6fd');
     }
 
     drawSparkline(canvas, dataPoints, strokeColor) {
         if (!canvas || !dataPoints || dataPoints.length === 0) return;
         const ctx = canvas.getContext('2d');
         const width = canvas.width = canvas.parentElement.clientWidth;
-        const height = canvas.height = canvas.parentElement.clientHeight || 180;
+        const height = canvas.height = 200;
 
         ctx.clearRect(0, 0, width, height);
-
         const min = Math.min(...dataPoints);
         const max = Math.max(...dataPoints);
         const range = (max - min) || 1;
         const padding = 20;
 
-        // Grid lines
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, height / 2);
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-
         if (dataPoints.length < 2) return;
 
-        // Sparkline path
         ctx.beginPath();
         dataPoints.forEach((val, i) => {
             const x = padding + (i / (dataPoints.length - 1)) * (width - 2 * padding);
@@ -299,52 +470,24 @@ class MosaicApp {
         });
 
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineWidth = 4;
         ctx.stroke();
-
-        // Gradient Fill
-        const lastX = width - padding;
-        const firstX = padding;
-        ctx.lineTo(lastX, height - padding);
-        ctx.lineTo(firstX, height - padding);
-        ctx.closePath();
-
-        const grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(0, strokeColor + '33');
-        grad.addColorStop(1, strokeColor + '00');
-        ctx.fillStyle = grad;
-        ctx.fill();
     }
 
     renderCities() {
         if (!this.elements.citiesGrid) return;
         const cities = this.state.cities;
         let html = '';
-
         Object.entries(cities).forEach(([cid, c]) => {
             html += `
                 <div class="city-card">
-                    <div class="city-header">
-                        <span class="city-name">${c.name}</span>
-                        <span class="city-tag">${c.architectural_style || 'Urban'}</span>
-                    </div>
-                    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.6rem;">${c.description}</p>
-                    <div class="city-stats">
-                        <div>
-                            <div class="city-stat-label">POPULATION</div>
-                            <div class="city-stat-val" style="color:var(--accent-cyan);">${c.population_count || 0}</div>
-                        </div>
-                        <div>
-                            <div class="city-stat-label">DOMINANT INDUSTRY</div>
-                            <div class="city-stat-val" style="color:var(--accent-emerald);">${c.dominant_industry || 'Trade'}</div>
-                        </div>
-                    </div>
+                    <div class="city-name">${c.name}</div>
+                    <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:0.5rem;">${c.architectural_style || 'Urban'}</div>
+                    <p style="font-size:0.85rem; margin-bottom:0.8rem;">${c.description}</p>
+                    <div style="font-family:var(--font-blocky); font-weight:700;">POPULATION: ${c.population_count || 0}</div>
                 </div>
             `;
         });
-
         this.elements.citiesGrid.innerHTML = html;
     }
 
@@ -361,23 +504,18 @@ class MosaicApp {
 
         let html = '';
         filtered.forEach(a => {
-            const cityClean = a.city_id.replace('city_', '').toUpperCase();
             html += `
                 <div class="agent-card" onclick="app.inspectAgent('${a.id}')">
                     <div class="agent-name">${a.full_name}</div>
-                    <div class="agent-occ">${a.occupation}</div>
-                    <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.4rem;">
+                    <div style="font-size:0.85rem; color:var(--ink-muted); font-weight:600;">${a.occupation}</div>
+                    <div style="font-family:var(--font-mono); font-size:0.75rem; margin-top:0.4rem;">
                         ${a.age} yrs • Wealth: $${(a.wealth || 0).toLocaleString(undefined, {maximumFractionDigits:0})}
-                    </div>
-                    <div class="agent-pills">
-                        <span class="pill">${cityClean}</span>
-                        <span class="pill">Ambition: ${a.ambition}</span>
                     </div>
                 </div>
             `;
         });
 
-        this.elements.agentsGrid.innerHTML = html || '<p style="color:var(--text-muted);">No agents match criteria.</p>';
+        this.elements.agentsGrid.innerHTML = html || '<p>No matching citizens.</p>';
     }
 
     async inspectAgent(agentId) {
@@ -394,138 +532,84 @@ class MosaicApp {
     renderAgentDossier(data) {
         const id = data.identity;
         const p = id.personality || {};
-        const v = id.values || {};
-        
+
         let memHtml = (data.salient_memories || []).slice(0, 5).map(m => `
-            <div style="padding:0.5rem; background:var(--bg-surface-2); border-radius:var(--radius-sm); margin-bottom:0.4rem; font-size:0.8rem;">
-                <span style="color:var(--accent-cyan); font-family:var(--font-mono);">Tick #${m.tick}:</span> ${m.content}
+            <div style="padding:0.5rem; background:var(--bg-base); border:var(--border-thin); border-radius:var(--radius-sharp); margin-bottom:0.4rem; font-size:0.8rem;">
+                <strong>Tick #${m.tick}:</strong> ${m.content}
             </div>
-        `).join('') || '<p style="color:var(--text-muted); font-size:0.8rem;">No memories logged.</p>';
+        `).join('') || '<p>No memories logged.</p>';
 
         let html = `
-            <h2 style="font-family:var(--font-display); font-size:1.4rem; margin-bottom:0.2rem;">${id.full_name}</h2>
-            <div style="color:var(--accent-cyan); font-size:0.9rem; font-weight:600; margin-bottom:1rem;">${id.occupation} in ${id.city_id.replace('city_', '').toUpperCase()}</div>
+            <h2 style="font-family:var(--font-blocky); font-size:1.6rem; font-weight:800;">${id.full_name}</h2>
+            <div style="font-family:var(--font-mono); font-size:0.9rem; font-weight:700; margin-bottom:1rem;">${id.occupation} in ${id.city_id.replace('city_', '').toUpperCase()}</div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:1.2rem; background:var(--bg-surface-2); padding:0.8rem; border-radius:var(--radius-md);">
-                <div><span style="color:var(--text-muted); font-size:0.75rem;">AGE:</span> <strong style="font-family:var(--font-mono);">${id.age}</strong></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem;">WEALTH:</span> <strong style="font-family:var(--font-mono); color:var(--accent-emerald);">$${(id.wealth || 0).toLocaleString()}</strong></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem;">SPOUSE:</span> <strong style="font-size:0.82rem;">${data.spouse_name}</strong></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem;">CHILDREN:</span> <strong style="font-size:0.82rem;">${data.children_names.length}</strong></div>
+            <div style="background:var(--pastel-yellow); border:var(--border-thick); padding:0.8rem; border-radius:var(--radius-sharp); margin-bottom:1.2rem;">
+                <div><strong>AGE:</strong> ${id.age}</div>
+                <div><strong>WEALTH:</strong> $${(id.wealth || 0).toLocaleString()}</div>
+                <div><strong>SPOUSE:</strong> ${data.spouse_name}</div>
+                <div><strong>CHILDREN:</strong> ${data.children_names.length}</div>
             </div>
 
-            <h4 style="font-family:var(--font-display); font-size:0.9rem; margin-bottom:0.5rem; color:var(--text-secondary);">PERSONALITY SPECTRUM</h4>
-            <div style="display:flex; flex-direction:column; gap:0.4rem; margin-bottom:1.2rem; font-size:0.78rem;">
-                <div>Openness: <progress value="${p.openness || 0}" max="1" style="width:100%; height:6px;"></progress></div>
-                <div>Extraversion: <progress value="${p.extraversion || 0}" max="1" style="width:100%; height:6px;"></progress></div>
-                <div>Neuroticism: <progress value="${p.neuroticism || 0}" max="1" style="width:100%; height:6px;"></progress></div>
+            <h3 style="font-family:var(--font-blocky); margin-bottom:0.4rem;">BIG-5 TRAITS</h3>
+            <div style="font-size:0.8rem; margin-bottom:1rem;">
+                Openness: ${p.openness || 0} | Extraversion: ${p.extraversion || 0} | Neuroticism: ${p.neuroticism || 0}
             </div>
 
-            <h4 style="font-family:var(--font-display); font-size:0.9rem; margin-bottom:0.5rem; color:var(--text-secondary);">SALIENT MEMORIES</h4>
+            <h3 style="font-family:var(--font-blocky); margin-bottom:0.4rem;">SALIENT MEMORIES</h3>
             <div>${memHtml}</div>
         `;
 
         this.elements.drawerContent.innerHTML = html;
     }
 
-    openDrawer() {
-        this.elements.drawerBackdrop.classList.add('open');
-    }
-
-    closeDrawer() {
-        this.elements.drawerBackdrop.classList.remove('open');
-    }
+    openDrawer() { this.elements.drawerBackdrop.classList.add('open'); }
+    closeDrawer() { this.elements.drawerBackdrop.classList.remove('open'); }
 
     renderEchoFeed() {
         if (!this.elements.echoFeed) return;
         const posts = this.state.echoFeed;
-        if (!posts || posts.length === 0) {
-            this.elements.echoFeed.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No posts available on Echo feed yet.</p>';
-            return;
-        }
-
         let html = '';
         posts.forEach(p => {
-            const tags = (p.hashtags || []).map(t => `<span class="hashtag">#${t}</span>`).join(' ');
             html += `
                 <div class="echo-card">
-                    <div class="echo-author">
-                        <span class="echo-name">${p.author_name}</span>
-                        <span class="echo-tick">Tick #${p.tick}</span>
+                    <div style="display:flex; justify-content:space-between; font-family:var(--font-blocky); font-weight:800;">
+                        <span>${p.author_name}</span>
+                        <span style="font-family:var(--font-pixel); font-size:0.75rem;">Tick #${p.tick}</span>
                     </div>
-                    <div class="echo-body">${p.content}</div>
-                    <div class="echo-footer">
-                        <div class="echo-hashtags">${tags}</div>
-                        <div>❤️ ${p.likes_count || 0} • 🔄 ${p.reposts_count || 0}</div>
-                    </div>
+                    <p style="margin:0.5rem 0;">${p.content}</p>
+                    <div style="font-family:var(--font-mono); font-size:0.75rem;">❤️ ${p.likes_count || 0} • 🔄 ${p.reposts_count || 0}</div>
                 </div>
             `;
         });
-
-        this.elements.echoFeed.innerHTML = html;
+        this.elements.echoFeed.innerHTML = html || '<p>No Echo posts.</p>';
     }
 
     renderNewspaper() {
         if (!this.elements.newspaperContainer) return;
         const news = this.state.latestNewspaper;
         if (!news || news.message) {
-            this.elements.newspaperContainer.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No gazette issue published yet. Step the simulation to generate news!</p>';
+            this.elements.newspaperContainer.innerHTML = '<p>No gazette issue available.</p>';
             return;
         }
 
         const articles = (news.articles || []).map(a => `
-            <div style="margin-bottom:1.5rem;">
-                <h3 style="font-size:1.25rem; font-weight:800; margin-bottom:0.4rem;">${a.title}</h3>
+            <div style="margin-bottom:1rem;">
+                <h3 style="font-family:var(--font-blocky); font-size:1.3rem;">${a.title}</h3>
                 <p>${a.body}</p>
             </div>
         `).join('');
 
-        const html = `
+        this.elements.newspaperContainer.innerHTML = `
             <div class="newspaper-wrapper">
                 <div class="newspaper-title">The Solaria Chronicle</div>
-                <div class="newspaper-meta">
-                    <span>${news.date_str || `Tick ${news.tick}`}</span>
-                    <span>Issue #${news.tick}</span>
-                    <span>Price: 5 Credits</span>
-                </div>
-                <div class="newspaper-headline">${news.headline || 'Simulation Progresses'}</div>
-                <div class="newspaper-columns">${articles}</div>
+                <div style="font-family:var(--font-mono); font-size:0.8rem; margin-bottom:1rem;">${news.date_str || `Tick ${news.tick}`} • ISSUE #${news.tick}</div>
+                <h2 style="font-family:var(--font-blocky); font-size:1.8rem; margin-bottom:1rem;">${news.headline}</h2>
+                <div>${articles}</div>
             </div>
         `;
-
-        this.elements.newspaperContainer.innerHTML = html;
-    }
-
-    renderCausalTimeline() {
-        if (!this.elements.causalTimeline) return;
-        const events = this.state.causalEvents;
-        if (!events || events.length === 0) {
-            this.elements.causalTimeline.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No causal turning points recorded yet.</p>';
-            return;
-        }
-
-        let html = '<div class="timeline">';
-        events.forEach(e => {
-            html += `
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div style="display:flex; justify-space-between; align-items:center; margin-bottom:0.3rem;">
-                            <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--accent-cyan);">TICK #${e.tick} • ${e.event_type}</span>
-                            <span style="font-size:0.75rem; color:var(--text-muted);">${e.location_city || 'Solaria'}</span>
-                        </div>
-                        <h4 style="font-family:var(--font-display); font-weight:700; font-size:1rem; margin-bottom:0.3rem;">${e.title}</h4>
-                        <p style="font-size:0.85rem; color:var(--text-secondary);">${e.description}</p>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-
-        this.elements.causalTimeline.innerHTML = html;
     }
 }
 
-// Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new MosaicApp();
+    window.app = new MosaicGodsEyeApp();
 });

@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSAIC — Artificial Civilization Observer Telemetry</title>
+    <title>MOSAIC — Artificial Civilization God's Eye Observer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@500;700;800;900&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,700;0,6..72,800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-    <!-- Sticky Glassmorphic Header Navigation -->
+    <!-- Sticky Header Navigation -->
     <header class="navbar">
         <div class="brand">
             <div class="brand-icon">M</div>
             <div>
-                <div class="brand-title">MOSAIC OBSERVER</div>
-                <div style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">CIVILIZATION TELEMETRY v2.0</div>
+                <div class="brand-title">MOSAIC GOD'S EYE</div>
+                <div style="font-size:0.68rem; font-family:var(--font-pixel);">LIVE CIVILIZATION SIMULATOR</div>
             </div>
             <div class="live-badge">
                 <span class="live-dot"></span>
@@ -27,10 +27,10 @@
 
         <!-- Simulation Control Bar -->
         <div class="control-bar">
-            <button id="btn-step" class="btn btn-primary">▶ Step 1 Month</button>
-            <button id="btn-step6" class="btn">⏩ Step 6 Months</button>
+            <button id="btn-step" class="btn btn-primary">⚡ Step Month</button>
+            <button id="btn-step6" class="btn">⏩ Step 6M</button>
             <button id="btn-play" class="btn">▶ Auto Play</button>
-            <select id="speed-select" class="speed-select" title="Interval Speed">
+            <select id="speed-select" class="speed-select" title="Simulation Speed">
                 <option value="2000">1x (2s)</option>
                 <option value="1000">2x (1s)</option>
                 <option value="500">4x (0.5s)</option>
@@ -39,74 +39,91 @@
 
         <!-- Navigation Tabs -->
         <nav class="nav-tabs">
-            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn active" data-tab="godseye">👁️ God's Eye Map</button>
+            <button class="tab-btn" data-tab="overview">Telemetry</button>
             <button class="tab-btn" data-tab="cities">Cities</button>
-            <button class="tab-btn" data-tab="agents">Agents</button>
+            <button class="tab-btn" data-tab="agents">Citizens</button>
             <button class="tab-btn" data-tab="echo">Echo Feed</button>
             <button class="tab-btn" data-tab="newspaper">Gazette</button>
-            <button class="tab-btn" data-tab="causal">Causal Tree</button>
         </nav>
     </header>
 
-    <!-- Main Container -->
+    <!-- Main Content Container -->
     <main class="main-content">
 
-        <!-- TAB 1: OVERVIEW TELEMETRY -->
-        <section id="tab-overview" class="tab-panel active">
-            <!-- Telemetry Metrics Grid -->
+        <!-- TAB 1: GOD'S EYE VIEW MAP -->
+        <section id="tab-godseye" class="tab-panel active">
+            <div class="gods-eye-container">
+                <div class="canvas-header">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <h2 style="font-family:var(--font-blocky); font-size:1.4rem; font-weight:800;">SOLARIA REGIONAL MAP — REAL-TIME AGENT POSITIONS</h2>
+                        <span id="map-agent-count" class="live-badge" style="background:var(--pastel-yellow);">500 AGENTS LIVE</span>
+                    </div>
+                    <div style="font-family:var(--font-pixel); font-size:0.75rem;">
+                        TICK: <strong id="canvas-tick-badge" style="color:var(--ink-dark);">#0</strong>
+                    </div>
+                </div>
+
+                <canvas id="gods-canvas" class="gods-canvas"></canvas>
+
+                <div class="gods-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span> 🏢 At Workplace</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> 🏠 At Home</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> 🏛️ City Center / Politics</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#a855f7;"></span> 🛍️ Social / Market</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f43f5e;"></span> 🚨 High Stress / Crime</div>
+                </div>
+            </div>
+
+            <!-- Telemetry Metrics Grid below map -->
             <div class="metrics-grid">
                 <div class="metric-card gdp">
                     <div class="metric-title">MONTHLY GDP</div>
                     <div id="val-gdp" class="metric-value">$0.00</div>
-                    <div class="metric-subtitle">Regional economic output</div>
+                    <div class="metric-subtitle">Regional Output</div>
                 </div>
                 <div class="metric-card pop">
-                    <div class="metric-title">LIVING POPULATION</div>
+                    <div class="metric-title">LIVING CITIZENS</div>
                     <div id="val-pop" class="metric-value">0 / 0</div>
-                    <div class="metric-subtitle">Active agents across cities</div>
+                    <div class="metric-subtitle">Active Agents</div>
                 </div>
                 <div class="metric-card party">
-                    <div class="metric-title">RULING PARTY</div>
-                    <div id="val-party" class="metric-value">Local Councils</div>
-                    <div class="metric-subtitle">Solaria Parliamentary Majority</div>
+                    <div class="metric-title">PARLIAMENT MAJORITY</div>
+                    <div id="val-party" class="metric-value">Councils</div>
+                    <div class="metric-subtitle">Ruling Faction</div>
                 </div>
                 <div class="metric-card events">
-                    <div class="metric-title">CAUSAL EVENTS</div>
+                    <div class="metric-title">CAUSAL NODES</div>
                     <div id="val-events" class="metric-value">0</div>
-                    <div class="metric-subtitle">Recorded historical turning points</div>
-                </div>
-            </div>
-
-            <!-- Real-time Sparklines -->
-            <div class="charts-row">
-                <div class="card-panel">
-                    <div class="card-header">
-                        <span class="card-title">GDP Trajectory</span>
-                        <span id="val-tick" style="font-family:var(--font-mono); font-size:0.8rem; color:var(--accent-cyan);">Tick #0</span>
-                    </div>
-                    <canvas id="canvas-gdp" class="sparkline-canvas"></canvas>
-                </div>
-                <div class="card-panel">
-                    <div class="card-header">
-                        <span class="card-title">Population Curve</span>
-                    </div>
-                    <canvas id="canvas-pop" class="sparkline-canvas"></canvas>
+                    <div class="metric-subtitle">Turning Points</div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: CITIES REGIONAL GRID -->
+        <!-- TAB 2: OVERVIEW TELEMETRY -->
+        <section id="tab-overview" class="tab-panel">
+            <div class="charts-row" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div style="background:var(--bg-card); border:var(--border-thick); padding:1.25rem; box-shadow:var(--shadow-block);">
+                    <h3 style="font-family:var(--font-blocky); font-size:1.1rem; margin-bottom:1rem;">GDP Trajectory</h3>
+                    <canvas id="canvas-gdp" style="width:100%; height:200px; background:#181825; border:var(--border-thin);"></canvas>
+                </div>
+                <div style="background:var(--bg-card); border:var(--border-thick); padding:1.25rem; box-shadow:var(--shadow-block);">
+                    <h3 style="font-family:var(--font-blocky); font-size:1.1rem; margin-bottom:1rem;">Population Curve</h3>
+                    <canvas id="canvas-pop" style="width:100%; height:200px; background:#181825; border:var(--border-thin);"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: CITIES REGIONAL GRID -->
         <section id="tab-cities" class="tab-panel">
-            <h2 style="font-family:var(--font-display); font-size:1.4rem; margin-bottom:1rem;">Regional Cities of Solaria</h2>
-            <div id="cities-grid" class="cities-grid">
-                <!-- Dynamically rendered city cards -->
-            </div>
+            <h2 style="font-family:var(--font-blocky); font-size:1.5rem; font-weight:800; margin-bottom:1rem;">Solaria Cities & Hubs</h2>
+            <div id="cities-grid" class="cities-grid"></div>
         </section>
 
-        <!-- TAB 3: AGENTS DIRECTORY -->
+        <!-- TAB 4: AGENTS DIRECTORY -->
         <section id="tab-agents" class="tab-panel">
             <div class="directory-controls">
-                <input type="text" id="agent-search" class="input-search" placeholder="Search agent name or occupation...">
+                <input type="text" id="agent-search" class="input-search" placeholder="Search citizen name or job...">
                 <select id="city-filter" class="select-filter">
                     <option value="">All Cities</option>
                     <option value="city_solaria">Solaria</option>
@@ -115,43 +132,30 @@
                     <option value="city_veridia">Veridia</option>
                 </select>
             </div>
-            <div id="agents-grid" class="agents-grid">
-                <!-- Dynamically rendered agent cards -->
-            </div>
+            <div id="agents-grid" class="agents-grid"></div>
         </section>
 
-        <!-- TAB 4: ECHO SOCIAL FEED -->
+        <!-- TAB 5: ECHO SOCIAL FEED -->
         <section id="tab-echo" class="tab-panel">
-            <h2 style="font-family:var(--font-display); font-size:1.4rem; text-align:center; margin-bottom:1.5rem;">Sim-Social Feed ("Echo")</h2>
-            <div id="echo-feed" class="echo-feed">
-                <!-- Dynamically rendered posts -->
-            </div>
+            <h2 style="font-family:var(--font-blocky); font-size:1.5rem; text-align:center; margin-bottom:1.5rem;">Echo Social Network</h2>
+            <div id="echo-feed" class="echo-feed"></div>
         </section>
 
-        <!-- TAB 5: GAZETTE NEWSPAPER -->
+        <!-- TAB 6: GAZETTE NEWSPAPER -->
         <section id="tab-newspaper" class="tab-panel">
-            <div id="newspaper-container">
-                <!-- Dynamically rendered gazette -->
-            </div>
-        </section>
-
-        <!-- TAB 6: CAUSAL TREE -->
-        <section id="tab-causal" class="tab-panel">
-            <h2 style="font-family:var(--font-display); font-size:1.4rem; text-align:center; margin-bottom:1.5rem;">Causal Turning Points & Provenance</h2>
-            <div id="causal-timeline">
-                <!-- Dynamically rendered timeline -->
-            </div>
+            <div id="newspaper-container"></div>
         </section>
 
     </main>
+
+    <!-- Map Tooltip Popup -->
+    <div id="map-tooltip" class="map-tooltip"></div>
 
     <!-- Side Drawer Modal for Agent Dossier -->
     <div id="drawer-backdrop" class="drawer-backdrop">
         <div class="drawer-panel">
             <button id="drawer-close" class="drawer-close">✕</button>
-            <div id="drawer-content">
-                <!-- Agent Dossier details -->
-            </div>
+            <div id="drawer-content"></div>
         </div>
     </div>
 
