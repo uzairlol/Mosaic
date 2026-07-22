@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSAIC — Solaria Prime Detailed Planetary Observer</title>
+    <title>MOSAIC — Solaria Island Animal Crossing Observer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
     <!-- Header Navigation -->
     <header class="navbar">
         <div class="brand">
-            <div class="brand-icon">🪐</div>
+            <div class="brand-icon">🍃</div>
             <div>
-                <div class="brand-title">SOLARIA PRIME — PLANETARY MAP COMMAND</div>
-                <div style="font-size:0.68rem; font-family:var(--font-pixel);">TOPOGRAPHICAL GOD'S EYE SIMULATOR</div>
+                <div class="brand-title">SOLARIA ISLAND — NOOK ISLAND MAP COMMAND</div>
+                <div style="font-size:0.75rem; font-family:var(--font-pixel); color: var(--ac-yellow);">COZY ANIMAL CROSSING GOD'S EYE VILLAGE</div>
             </div>
             <div class="live-badge">
                 <span class="live-dot"></span>
@@ -27,13 +27,13 @@
 
         <!-- Control Bar -->
         <div class="control-bar">
-            <button id="btn-step" class="btn btn-primary">⚡ Step Month</button>
+            <button id="btn-step" class="btn btn-primary">⚡ Next Day</button>
             <button id="btn-step6" class="btn">⏩ Step 6M</button>
-            <button id="btn-play" class="btn">▶ Auto Play</button>
+            <button id="btn-play" class="btn">▶ Island Play</button>
             <select id="speed-select" class="speed-select" title="Speed">
-                <option value="2000">1x (2s)</option>
-                <option value="1000">2x (1s)</option>
-                <option value="500">4x (0.5s)</option>
+                <option value="2000">Cozy (2s)</option>
+                <option value="1000">Brisk (1s)</option>
+                <option value="500">Fast (0.5s)</option>
             </select>
         </div>
     </header>
@@ -49,11 +49,11 @@
                 <div class="command-box map-box">
                     <div class="box-header">
                         <div class="box-title">
-                            <span>🗺️</span> SOLARIA PRIME TOPOGRAPHICAL WORLD MAP & ENVIRONMENT
+                            <span>🏖️</span> SOLARIA ISLAND VILLAGE & COASTLINE MAP
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem;">
-                            <span id="map-agent-count" class="box-badge">500 CITIZENS</span>
-                            <span id="canvas-tick-badge" class="box-badge" style="background:var(--earth-sand);">TICK #0</span>
+                            <span id="map-agent-count" class="box-badge">500 VILLAGERS</span>
+                            <span id="canvas-tick-badge" class="box-badge" style="background:var(--ac-yellow);">DAY #0</span>
                         </div>
                     </div>
 
@@ -92,12 +92,12 @@
 
                     <!-- Map Legend -->
                     <div class="map-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background:#2a9d8f;"></span> 🌊 Coral Reef & Docks</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#2d6a4f;"></span> 🌲 Pine Forests & Canopy</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f4a261;"></span> 🏙️ Metropolis Urban Grid</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#c25e40;"></span> ⛰️ Snow Peak Ridges</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#d97724;"></span> 🏭 Factory Smoke Stacks</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#e76f51;"></span> 🌾 Agriculture Canals</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#46b5d1;"></span> 🌊 Coral Shoreline & Docks</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#7ec850;"></span> 🌳 Cherry & Apple Groves</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f7ebd3;"></span> 🏖️ Sandy Beachfront</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#e85d04;"></span> 🏡 Cozy Villager Cottages</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#ffd166;"></span> 🏛️ Town Square Plaza</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#9b5de5;"></span> 🌉 Cobblestone & Bridges</div>
                     </div>
                 </div>
 

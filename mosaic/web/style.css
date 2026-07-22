@@ -1,38 +1,52 @@
-/* MOSAIC — Solaria Prime Detailed Planetary Observer UI (Earthy Neo-Brutalist) */
+/* MOSAIC — Solaria Island Observer UI (Animal Crossing: New Horizons Aesthetic) */
 
 :root {
-    /* Earthy Natural Palette */
-    --bg-earth-base: #ede8de;
-    --bg-earth-card: #f8f5ee;
-    --bg-earth-dark: #121920;
-    --bg-earth-panel: #1b2631;
+    /* Animal Crossing Palette */
+    --ac-sky: #9bd6f2;
+    --ac-grass: #7ec850;
+    --ac-dark-grass: #5fb033;
+    --ac-wood: #6b4423;
+    --ac-light-wood: #a67c52;
+    --ac-cream: #fffcf2;
+    --ac-card: #f7ebd3;
+    --ac-yellow: #ffd166;
+    --ac-peach: #ffb3c1;
+    --ac-coral: #ff85a1;
+    --ac-leaf: #52b788;
+    --ac-ocean: #46b5d1;
+    --ac-sand: #f5e3b5;
 
-    --earth-terracotta: #c25e40;
-    --earth-moss: #2d6a4f;
-    --earth-ochre: #d97724;
-    --earth-sand: #f4a261;
-    --earth-ocean: #2a9d8f;
-    --earth-clay: #e76f51;
-    --earth-slate: #264653;
-    --earth-cream: #fbf8f3;
+    --bg-earth-base: #e2f4fb;
+    --bg-earth-card: var(--ac-card);
+    --bg-earth-dark: #2d4a3e;
+    --bg-earth-panel: #3a5c4d;
 
-    --ink-dark: #141c24;
-    --ink-muted: #576574;
-    --ink-light: #f8f5ee;
+    --earth-terracotta: var(--ac-coral);
+    --earth-moss: var(--ac-grass);
+    --earth-ochre: var(--ac-wood);
+    --earth-sand: var(--ac-yellow);
+    --earth-ocean: var(--ac-ocean);
+    --earth-clay: var(--ac-peach);
+    --earth-slate: #4a5759;
+    --earth-cream: var(--ac-cream);
 
-    --border-thick: 3px solid var(--ink-dark);
-    --border-thin: 2px solid var(--ink-dark);
+    --ink-dark: #4a2810;
+    --ink-muted: #7a5a40;
+    --ink-light: #fffcf2;
 
-    --shadow-block: 4px 4px 0px var(--ink-dark);
-    --shadow-block-lg: 6px 6px 0px var(--ink-dark);
-    --shadow-block-sm: 2px 2px 0px var(--ink-dark);
+    --border-thick: 3px solid var(--ac-wood);
+    --border-thin: 2px solid var(--ac-wood);
 
-    --font-blocky: 'Chakra Petch', sans-serif;
+    --shadow-block: 0px 6px 0px rgba(107, 68, 35, 0.25);
+    --shadow-block-lg: 0px 8px 0px rgba(107, 68, 35, 0.3);
+    --shadow-block-sm: 0px 3px 0px rgba(107, 68, 35, 0.2);
+
+    --font-blocky: 'Fredoka', sans-serif;
     --font-pixel: 'Silkscreen', monospace;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-body: 'Quicksand', sans-serif;
+    --font-mono: 'Quicksand', monospace;
 
-    --radius-sharp: 4px;
+    --radius-sharp: 18px;
 }
 
 *, *::before, *::after {

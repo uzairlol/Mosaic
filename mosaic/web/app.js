@@ -432,154 +432,215 @@ class MosaicUltraPlanetaryApp {
 
         ctx.save();
 
-        // Dark Deep Ocean Base
-        ctx.fillStyle = '#0b1117';
+        // 🌊 Animal Crossing Sunny Turquoise Ocean Water
+        ctx.fillStyle = '#46b5d1';
         ctx.fillRect(0, 0, w, h);
+
+        // Water Wave Ripples Texture
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        for (let rx = 20; rx < w; rx += 90) {
+            for (let ry = 20; ry < h; ry += 70) {
+                const waveX = (rx + (this.clouds[0].x * 0.4)) % w;
+                ctx.beginPath();
+                ctx.arc(waveX, ry, 12, Math.PI, Math.PI * 1.8);
+                ctx.stroke();
+            }
+        }
 
         // Apply Zoom & Pan Transform
         ctx.translate(this.panX, this.panY);
         ctx.scale(this.zoom, this.zoom);
 
-        // Draw Jagged Island Continental Landmass
-        ctx.fillStyle = '#17222d';
-        ctx.strokeStyle = '#2a9d8f';
-        ctx.lineWidth = 3;
+        // 🏖️ Sandy Beach Rim (Warm Cream Sand)
+        ctx.fillStyle = '#f5e3b5';
+        ctx.strokeStyle = '#e6c88b';
+        ctx.lineWidth = 4;
 
         ctx.beginPath();
-        ctx.moveTo(120, 180);
-        ctx.bezierCurveTo(180, 80, 420, 60, 600, 80);
-        ctx.bezierCurveTo(750, 100, 920, 180, 940, 320);
-        ctx.bezierCurveTo(900, 450, 680, 500, 450, 480);
-        ctx.bezierCurveTo(280, 460, 140, 420, 100, 300);
+        ctx.moveTo(110, 170);
+        ctx.bezierCurveTo(170, 70, 430, 50, 610, 70);
+        ctx.bezierCurveTo(770, 90, 940, 170, 955, 320);
+        ctx.bezierCurveTo(915, 465, 690, 515, 450, 495);
+        ctx.bezierCurveTo(270, 475, 130, 435, 90, 300);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // Shallow Reef Glow
-        ctx.strokeStyle = '#2a9d8f44';
-        ctx.lineWidth = 12;
+        // 🌿 Lush Grassland Island Tier 1 (Vibrant Green)
+        ctx.fillStyle = '#7ec850';
+        ctx.strokeStyle = '#5fb033';
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+        ctx.moveTo(130, 185);
+        ctx.bezierCurveTo(185, 90, 420, 75, 590, 90);
+        ctx.bezierCurveTo(745, 105, 915, 185, 930, 310);
+        ctx.bezierCurveTo(890, 445, 670, 490, 440, 470);
+        ctx.bezierCurveTo(275, 455, 145, 415, 110, 290);
+        ctx.closePath();
+        ctx.fill();
         ctx.stroke();
 
-        // Render Biome Contours & Textures
-        // 🌲 Veridia Forest Canopy (Green)
-        ctx.fillStyle = '#1e3a29';
+        // 🍃 Upper Cliff Tier 2 (Darker Grass Green Accent)
+        ctx.fillStyle = '#6cb043';
         ctx.beginPath();
-        ctx.arc(800, 320, 110, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#2d6a4f';
-        ctx.font = '10px sans-serif';
-        for (let i = 0; i < 15; i++) {
-            ctx.fillText('🌲', 740 + (i * 14 % 100), 280 + (i * 19 % 80));
-        }
-
-        // ⛰️ Ironreach Mountain Ridges (Terracotta & Snow Peaks)
-        ctx.fillStyle = '#3a2520';
-        ctx.beginPath();
-        ctx.arc(340, 400, 95, 0, Math.PI * 2);
-        ctx.fill();
-        // Snow Peaks
-        ctx.fillStyle = '#ffffffaa';
-        ctx.beginPath();
-        ctx.moveTo(320, 370); ctx.lineTo(330, 350); ctx.lineTo(340, 370);
-        ctx.moveTo(350, 380); ctx.lineTo(360, 360); ctx.lineTo(370, 380);
+        ctx.arc(340, 390, 75, 0, Math.PI * 2);
+        ctx.arc(800, 310, 85, 0, Math.PI * 2);
         ctx.fill();
 
-        // 🏙️ Solaria Metropolis Urban Grid
-        ctx.fillStyle = '#3d2e23';
-        ctx.fillRect(480, 110, 140, 120);
-        ctx.fillStyle = '#f4a261aa';
-        for (let bx = 490; bx < 610; bx += 18) {
-            for (let by = 120; by < 220; by += 18) {
-                ctx.fillRect(bx, by, 10, 10);
-            }
-        }
-
-        // 🚢 Aethelgard Port & Docks
-        ctx.fillStyle = '#1b333a';
-        ctx.beginPath();
-        ctx.arc(220, 240, 90, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#2a9d8f';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(180, 250); ctx.lineTo(140, 250);
-        ctx.moveTo(200, 270); ctx.lineTo(160, 270);
-        ctx.stroke();
-
-        // Highways & Bridges Layer
-        if (this.layers.roads) {
-            ctx.strokeStyle = '#d9772488';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([6, 6]);
-
+        // 🌳 Fruit Trees (Cherry & Apple Groves)
+        const renderTree = (x, y, fruitEmoji) => {
+            ctx.fillStyle = '#6b4423';
+            ctx.fillRect(x - 3, y, 6, 12);
+            ctx.fillStyle = '#52b788';
             ctx.beginPath();
-            ctx.moveTo(550, 170); ctx.lineTo(220, 240); // Solaria -> Port
-            ctx.moveTo(550, 170); ctx.lineTo(340, 400); // Solaria -> Ironreach
-            ctx.moveTo(550, 170); ctx.lineTo(800, 320); // Solaria -> Veridia
-            ctx.moveTo(220, 240); ctx.lineTo(340, 400); // Port -> Ironreach
+            ctx.arc(x, y - 6, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#7ec850';
+            ctx.beginPath();
+            ctx.arc(x - 3, y - 9, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '10px sans-serif';
+            ctx.fillText(fruitEmoji, x - 4, y - 4);
+        };
+
+        // Veridia Apple Forest
+        for (let i = 0; i < 8; i++) {
+            renderTree(740 + (i * 18 % 100), 270 + (i * 23 % 70), '🍎');
+        }
+        // Solaria Cherry Forest
+        for (let i = 0; i < 6; i++) {
+            renderTree(500 + (i * 22 % 90), 110 + (i * 17 % 50), '🍒');
+        }
+
+        // 🏡 Cozy Villager Cottages (Ironreach & Solaria Plaza)
+        const renderCottage = (x, y, roofColor) => {
+            ctx.fillStyle = '#fffcf2';
+            ctx.fillRect(x - 14, y - 10, 28, 20);
+            ctx.strokeStyle = '#6b4423';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 14, y - 10, 28, 20);
+
+            // Roof Triangle
+            ctx.fillStyle = roofColor;
+            ctx.beginPath();
+            ctx.moveTo(x - 18, y - 10);
+            ctx.lineTo(x, y - 24);
+            ctx.lineTo(x + 18, y - 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Door
+            ctx.fillStyle = '#6b4423';
+            ctx.fillRect(x - 4, y, 8, 10);
+        };
+
+        renderCottage(340, 380, '#ff85a1'); // Ironreach Pink House
+        renderCottage(380, 410, '#ffd166'); // Ironreach Yellow House
+        renderCottage(530, 160, '#46b5d1'); // Solaria Blue House
+        renderCottage(580, 180, '#52b788'); // Solaria Green House
+
+        // 🌉 Wooden Docks & Bridges Layer
+        if (this.layers.roads) {
+            ctx.strokeStyle = '#a67c52';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            // Dock at Port
+            ctx.moveTo(180, 240); ctx.lineTo(120, 240);
+            ctx.stroke();
+
+            // Cobblestone Village Paths
+            ctx.strokeStyle = '#ffd166';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(550, 170); ctx.lineTo(220, 240);
+            ctx.moveTo(550, 170); ctx.lineTo(340, 400);
+            ctx.moveTo(550, 170); ctx.lineTo(800, 320);
             ctx.stroke();
             ctx.setLineDash([]);
         }
 
-        // Cargo Ships Layer
-        if (this.layers.ships) {
-            this.ships.forEach(s => {
-                ctx.fillStyle = '#38bdf8';
-                ctx.font = '12px sans-serif';
-                ctx.fillText('🚢', s.x, s.y);
-            });
-        }
-
-        // Factory Chimney Smoke Particles
+        // Factory Smoke Spirals (Ironreach House Smoke)
         this.smokeParticles.forEach(p => {
-            ctx.fillStyle = `rgba(200, 200, 200, ${p.alpha})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
             ctx.fill();
         });
 
-        // City Labels
+        // Cozy Village Zone Badges
         Object.values(this.citiesHD).forEach(c => {
-            ctx.fillStyle = '#f8f5ee';
-            ctx.font = 'bold 12px "Chakra Petch", sans-serif';
+            ctx.fillStyle = '#6b4423';
+            ctx.font = 'bold 12px "Fredoka", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(c.name.toUpperCase(), c.x, c.y - c.radius - 8);
+
+            // Background pill for label
+            const text = c.name.toUpperCase();
+            const textWidth = ctx.measureText(text).width;
+            ctx.fillStyle = '#fffcf2';
+            ctx.beginPath();
+            ctx.roundRect(c.x - textWidth / 2 - 8, c.y - c.radius - 20, textWidth + 16, 20, 10);
+            ctx.fill();
+            ctx.strokeStyle = '#6b4423';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#4a2810';
+            ctx.fillText(text, c.x, c.y - c.radius - 6);
         });
 
-        // Agent Swarm Layer
+        // 👥 Animal Crossing Villagers Layer with Speech Bubbles
         if (this.layers.agents) {
             this.state.agentPositions.forEach(pos => {
-                // Apply activity filter
                 if (this.activeFilter !== 'all' && pos.activity !== this.activeFilter) return;
 
                 const isHovered = this.state.hoveredAgent?.id === pos.id;
 
+                // Cute Villager Circle Body
                 ctx.fillStyle = pos.color;
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, isHovered ? 8 : 4.5, 0, Math.PI * 2);
+                ctx.arc(pos.x, pos.y, isHovered ? 9 : 6, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.strokeStyle = '#0b1117';
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#6b4423';
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
+                // Eyes
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(pos.x - 2, pos.y - 2, 2, 0, Math.PI * 2);
+                ctx.arc(pos.x + 2, pos.y - 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Hovered Villager Speech Bubble
                 if (isHovered) {
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 2.5;
+                    ctx.fillStyle = '#fffcf2';
                     ctx.beginPath();
-                    ctx.arc(pos.x, pos.y, 11, 0, Math.PI * 2);
+                    ctx.roundRect(pos.x - 45, pos.y - 42, 90, 24, 8);
+                    ctx.fill();
+                    ctx.strokeStyle = '#6b4423';
+                    ctx.lineWidth = 2;
                     ctx.stroke();
+
+                    ctx.fillStyle = '#4a2810';
+                    ctx.font = 'bold 9px "Fredoka", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`💭 ${pos.name.split(' ')[0]}`, pos.x, pos.y - 27);
                 }
             });
         }
 
-        // Drifting Clouds Layer
+        // Drifting Fluffy AC Clouds
         if (this.layers.clouds) {
             this.clouds.forEach(c => {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
                 ctx.beginPath();
                 ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-                ctx.arc(c.x + 30, c.y - 10, c.size * 0.75, 0, Math.PI * 2);
+                ctx.arc(c.x + 25, c.y - 8, c.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(c.x - 25, c.y + 5, c.size * 0.65, 0, Math.PI * 2);
                 ctx.fill();
             });
         }
