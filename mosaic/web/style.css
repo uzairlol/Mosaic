@@ -210,13 +210,26 @@ body {
 
 .planetary-grid {
     display: grid;
-    grid-template-columns: 2.3fr 1fr;
+    grid-template-columns: 1.8fr 1fr;
     gap: 1.25rem;
 }
 
-@media (max-width: 1150px) {
+@media (max-width: 1366px) {
+    .planetary-grid {
+        grid-template-columns: 1.4fr 1fr;
+        gap: 1rem;
+    }
+    .gods-canvas-hd {
+        height: 480px;
+    }
+}
+
+@media (max-width: 1080px) {
     .planetary-grid {
         grid-template-columns: 1fr;
+    }
+    .gods-canvas-hd {
+        height: 440px;
     }
 }
 
