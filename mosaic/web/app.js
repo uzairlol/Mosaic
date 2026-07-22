@@ -369,20 +369,49 @@ class MosaicUltraPlanetaryApp {
             const cityKey = a.city_id in this.citiesHD ? a.city_id : 'city_solaria';
             const b = this.citiesHD[cityKey];
 
-            const seed = (idx * 41 + tick * 19) % 360;
-            const angle = (seed * Math.PI) / 180;
-            const dist = 12 + ((idx * 11) % (b.radius - 20));
-
-            const targetX = b.x + Math.cos(angle) * dist;
-            const targetY = b.y + Math.sin(angle) * dist;
-
-            let color = '#f4a261'; // Work (Ochre)
+            // Organic Neighborhood Layout: Group by activity along street grids & plazas
+            let color = '#ffd166'; // Work / Commerce (Golden Yellow)
             let activity = 'work';
             let actLabel = 'At Workplace';
+            let offsetX = 0;
+            let offsetY = 0;
 
-            if (idx % 4 === 0) { color = '#2d6a4f'; activity = 'home'; actLabel = 'At Residence'; }
-            else if (idx % 6 === 0) { color = '#d97724'; activity = 'rally'; actLabel = 'Political Assembly'; }
-            else if (a.wealth < 1000) { color = '#c25e40'; activity = 'stress'; actLabel = 'Financial Stress'; }
+            if (idx % 4 === 0) { 
+                color = '#52b788'; 
+                activity = 'home'; 
+                actLabel = 'At Residence'; 
+                // Residential neighborhood grid alignment
+                const col = (idx / 4) % 6;
+                const row = Math.floor((idx / 4) / 6) % 4;
+                offsetX = -40 + col * 16;
+                offsetY = 20 + row * 14;
+            } else if (idx % 6 === 0) { 
+                color = '#ff85a1'; 
+                activity = 'rally'; 
+                actLabel = 'Town Plaza Rally'; 
+                // Town square circle gathering
+                const angle = ((idx % 12) * Math.PI) / 6 + (tick * 0.05);
+                offsetX = Math.cos(angle) * 22;
+                offsetY = Math.sin(angle) * 22;
+            } else if (a.wealth < 1000) { 
+                color = '#ffb3c1'; 
+                activity = 'stress'; 
+                actLabel = 'Financial Stress'; 
+                offsetX = -30 + ((idx * 17) % 60);
+                offsetY = -25 + ((idx * 13) % 40);
+            } else {
+                // Commercial / Factory street grid walk
+                const street = (idx % 5) * 18;
+                offsetX = -45 + street;
+                offsetY = -15 + ((idx % 3) * 16);
+            }
+
+            // Slight organic wandering offset
+            const wanderX = Math.sin(tick * 0.1 + idx) * 3;
+            const wanderY = Math.cos(tick * 0.1 + idx) * 3;
+
+            const targetX = b.x + offsetX + wanderX;
+            const targetY = b.y + offsetY + wanderY;
 
             if (!this.state.agentPositions.has(a.id)) {
                 this.state.agentPositions.set(a.id, {
@@ -569,78 +598,104 @@ class MosaicUltraPlanetaryApp {
             });
         }
 
-        // 🏘️ High-Detail City Buildings (Town Hall, Nook's Shop, Able Sisters, Docks)
+        // 🏘️ 3D Isometric City Buildings (Town Hall, Market Shops, Tailor & Docks)
         const renderTownHall = (x, y) => {
-            // Main Plaza Cobblestone Base
+            // Shadow
+            ctx.fillStyle = 'rgba(74, 40, 16, 0.18)';
+            ctx.beginPath();
+            ctx.ellipse(x + 10, y + 15, 36, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cobblestone Plaza Base
             ctx.fillStyle = '#f7ebd3';
-            ctx.fillRect(x - 30, y - 25, 60, 45);
+            ctx.fillRect(x - 34, y - 28, 68, 50);
             ctx.strokeStyle = '#a67c52';
             ctx.lineWidth = 2;
-            ctx.strokeRect(x - 30, y - 25, 60, 45);
+            ctx.strokeRect(x - 34, y - 28, 68, 50);
 
-            // Brick Building Structure
+            // Main Building Front & Side Walls
             ctx.fillStyle = '#c25e40';
-            ctx.fillRect(x - 22, y - 18, 44, 30);
+            ctx.fillRect(x - 24, y - 16, 48, 32);
+            ctx.fillStyle = '#a84c32';
+            ctx.fillRect(x + 18, y - 16, 6, 32);
             ctx.strokeStyle = '#6b4423';
-            ctx.strokeRect(x - 22, y - 18, 44, 30);
+            ctx.strokeRect(x - 24, y - 16, 48, 32);
 
-            // Roof with Clocktower Spike
+            // Windows with Glass Shine
+            ctx.fillStyle = '#ffd166';
+            ctx.fillRect(x - 18, y - 8, 8, 8);
+            ctx.fillRect(x + 10, y - 8, 8, 8);
+            ctx.strokeRect(x - 18, y - 8, 8, 8);
+            ctx.strokeRect(x + 10, y - 8, 8, 8);
+
+            // Roof with Angled Isometric Ridge
             ctx.fillStyle = '#2d6a4f';
             ctx.beginPath();
-            ctx.moveTo(x - 26, y - 18);
-            ctx.lineTo(x, y - 34);
-            ctx.lineTo(x + 26, y - 18);
+            ctx.moveTo(x - 28, y - 16);
+            ctx.lineTo(x, y - 36);
+            ctx.lineTo(x + 28, y - 16);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // Clock Circle
+            // Clock Tower
             ctx.fillStyle = '#ffd166';
             ctx.beginPath();
-            ctx.arc(x, y - 24, 5, 0, Math.PI * 2);
+            ctx.arc(x, y - 26, 6, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-
-            // Double Doors
-            ctx.fillStyle = '#6b4423';
-            ctx.fillRect(x - 6, y, 12, 12);
         };
 
-        const renderNooksCranny = (x, y) => {
-            // Wooden Shop Structure
+        const renderMarketShop = (x, y) => {
+            // Shadow
+            ctx.fillStyle = 'rgba(74, 40, 16, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(x + 8, y + 10, 24, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Timber Walls
             ctx.fillStyle = '#f5e3b5';
-            ctx.fillRect(x - 18, y - 12, 36, 24);
+            ctx.fillRect(x - 20, y - 14, 40, 26);
             ctx.strokeStyle = '#6b4423';
             ctx.lineWidth = 2;
-            ctx.strokeRect(x - 18, y - 12, 36, 24);
+            ctx.strokeRect(x - 20, y - 14, 40, 26);
 
-            // Green Striped Awning Roof
+            // Striped Awning Roof
             ctx.fillStyle = '#52b788';
-            ctx.fillRect(x - 22, y - 18, 44, 8);
-            ctx.strokeRect(x - 22, y - 18, 44, 8);
+            ctx.fillRect(x - 24, y - 20, 48, 10);
+            ctx.strokeRect(x - 24, y - 20, 48, 10);
+            ctx.fillStyle = '#fffcf2';
+            ctx.fillRect(x - 12, y - 20, 8, 10);
+            ctx.fillRect(x + 4, y - 20, 8, 10);
 
-            // Nook Leaf Signboard
+            // Signboard
             ctx.fillStyle = '#ffd166';
             ctx.beginPath();
-            ctx.arc(x, y - 22, 6, 0, Math.PI * 2);
+            ctx.arc(x, y - 24, 6, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             ctx.font = '8px sans-serif';
-            ctx.fillText('🍃', x - 4, y - 19);
+            ctx.fillText('🍃', x - 4, y - 21);
         };
 
-        const renderAbleSisters = (x, y) => {
+        const renderCottagesCluster = (x, y) => {
+            // Shadow
+            ctx.fillStyle = 'rgba(74, 40, 16, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(x + 6, y + 8, 22, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.fillStyle = '#ffb3c1';
-            ctx.fillRect(x - 16, y - 10, 32, 20);
+            ctx.fillRect(x - 18, y - 12, 36, 22);
             ctx.strokeStyle = '#6b4423';
             ctx.lineWidth = 2;
-            ctx.strokeRect(x - 16, y - 10, 32, 20);
+            ctx.strokeRect(x - 18, y - 12, 36, 22);
 
             ctx.fillStyle = '#ff85a1';
             ctx.beginPath();
-            ctx.moveTo(x - 20, y - 10);
-            ctx.lineTo(x, y - 22);
-            ctx.lineTo(x + 20, y - 10);
+            ctx.moveTo(x - 22, y - 12);
+            ctx.lineTo(x, y - 24);
+            ctx.lineTo(x + 22, y - 12);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
@@ -648,11 +703,11 @@ class MosaicUltraPlanetaryApp {
 
         // Render City Landmarks
         renderTownHall(550, 170); // Solaria Metropolis Town Hall Plaza
-        renderNooksCranny(500, 140); // Nook's Cranny Shop
-        renderAbleSisters(600, 190); // Able Sisters Tailor
+        renderMarketShop(500, 130); // Solaria Market Shop
+        renderCottagesCluster(600, 190); // Solaria Residential
         renderTownHall(340, 400); // Ironreach Community Hall
-        renderNooksCranny(220, 240); // Aethelgard Port Shop
-        renderAbleSisters(800, 320); // Veridia Farm Shop
+        renderMarketShop(220, 240); // Aethelgard Port Shop
+        renderCottagesCluster(800, 320); // Veridia Farm Cottages
 
         // 🌉 High-Detail Cobblestone Highways & Stone Bridges Layer
         if (this.layers.roads) {
