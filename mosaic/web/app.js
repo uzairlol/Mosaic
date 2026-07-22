@@ -101,7 +101,12 @@ class MosaicUltraPlanetaryApp {
 
             drawerBackdrop: document.getElementById('drawer-backdrop'),
             drawerClose: document.getElementById('drawer-close'),
-            drawerContent: document.getElementById('drawer-content')
+            drawerContent: document.getElementById('drawer-content'),
+
+            btnExpandMap: document.getElementById('btn-expand-map'),
+            mapCommandBox: document.getElementById('map-command-box'),
+            newsToast: document.getElementById('news-toast'),
+            toastHeadline: document.getElementById('toast-headline')
         };
     }
 
@@ -117,6 +122,14 @@ class MosaicUltraPlanetaryApp {
                 this.startAutoPlay();
             }
         });
+
+        // Expand Map Toggle Button
+        if (this.elements.btnExpandMap && this.elements.mapCommandBox) {
+            this.elements.btnExpandMap.addEventListener('click', () => {
+                this.elements.mapCommandBox.classList.toggle('expanded-fullscreen');
+                this.elements.btnExpandMap.textContent = this.elements.mapCommandBox.classList.contains('expanded-fullscreen') ? '🗗' : '⛶';
+            });
+        }
 
         // Zoom Controls
         if (this.elements.btnZoomIn) this.elements.btnZoomIn.addEventListener('click', () => this.setZoom(this.zoom * 1.25));
@@ -253,11 +266,28 @@ class MosaicUltraPlanetaryApp {
     async fetchNewspaper() {
         try {
             const res = await fetch('/api/newspaper/latest');
-            this.state.latestNewspaper = await res.json();
+            const data = await res.json();
+            if (data && data.headline && (!this.state.latestNewspaper || this.state.latestNewspaper.headline !== data.headline)) {
+                this.showNewsToast(data.headline);
+            }
+            this.state.latestNewspaper = data;
             this.renderNewspaper();
         } catch (e) {
             console.error('Failed newspaper fetch:', e);
         }
+    }
+
+    showNewsToast(headline) {
+        const toast = this.elements.newsToast;
+        const text = this.elements.toastHeadline;
+        if (!toast || !text) return;
+
+        text.textContent = headline || 'Solaria Gazette Edition Published!';
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5500);
     }
 
     async stepSimulation(months = 1) {

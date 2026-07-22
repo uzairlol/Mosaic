@@ -46,14 +46,15 @@
             <div class="left-column">
 
                 <!-- BOX 1: ULTRA-DETAILED PLANETARY MAP -->
-                <div class="command-box map-box">
+                <div class="command-box map-box" id="map-command-box">
                     <div class="box-header">
                         <div class="box-title">
-                            <span>🏖️</span> SOLARIA ISLAND VILLAGE & COASTLINE MAP
+                            <span>🏖️</span> SOLARIA ISLAND VILLAGE MAP
                         </div>
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <span id="map-agent-count" class="box-badge">500 VILLAGERS</span>
                             <span id="canvas-tick-badge" class="box-badge" style="background:var(--ac-yellow);">DAY #0</span>
+                            <button id="btn-expand-map" class="btn-expand-symbol" title="Toggle Fullscreen Map">⛶</button>
                         </div>
                     </div>
 
@@ -180,6 +181,15 @@
 
         </div>
     </main>
+
+    <!-- Bottom Left News Toast Notification Popup -->
+    <div id="news-toast" class="news-toast">
+        <div class="toast-header">
+            <span>📰 SOLARIA GAZETTE FLASH</span>
+            <span class="toast-time">JUST NOW</span>
+        </div>
+        <div id="toast-headline" class="toast-headline">Gazette Issue Released!</div>
+    </div>
 
     <!-- Floating Map Tooltip -->
     <div id="map-tooltip" class="map-tooltip"></div>
