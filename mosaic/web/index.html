@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSAIC — Solaria Island Animal Crossing Observer</title>
+    <title>MOSAIC — Solaria Island Cozy Village Observer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
         <div class="brand">
             <div class="brand-icon">🍃</div>
             <div>
-                <div class="brand-title">SOLARIA ISLAND — NOOK ISLAND MAP COMMAND</div>
-                <div style="font-size:0.75rem; font-family:var(--font-pixel); color: var(--ac-yellow);">COZY ANIMAL CROSSING GOD'S EYE VILLAGE</div>
+                <div class="brand-title">SOLARIA ISLAND — COZY MAP COMMAND</div>
+                <div style="font-size:0.75rem; font-family:var(--font-pixel); color: var(--ac-yellow);">VIBRANT VILLAGE GOD'S EYE SIMULATOR</div>
             </div>
             <div class="live-badge">
                 <span class="live-dot"></span>
@@ -71,9 +71,9 @@
                         <div class="hud-group">
                             <span class="hud-label">LAYERS:</span>
                             <label class="hud-check"><input type="checkbox" id="layer-clouds" checked> ☁️ Clouds</label>
-                            <label class="hud-check"><input type="checkbox" id="layer-ships" checked> 🚢 Ships</label>
-                            <label class="hud-check"><input type="checkbox" id="layer-roads" checked> 🛣️ Highways</label>
-                            <label class="hud-check"><input type="checkbox" id="layer-agents" checked> 👥 Citizens</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-ships" checked> 🚢 Docks</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-roads" checked> 🌉 Paths</label>
+                            <label class="hud-check"><input type="checkbox" id="layer-agents" checked> 👥 Villagers</label>
                         </div>
 
                         <!-- Activity Filters -->
@@ -88,58 +88,55 @@
                     </div>
 
                     <!-- 2D High-Detail Canvas -->
-                    <canvas id="gods-canvas" class="gods-canvas-hd"></canvas>
+                    <div style="flex:1; min-height:0; position:relative;">
+                        <canvas id="gods-canvas" class="gods-canvas-hd"></canvas>
+                    </div>
 
                     <!-- Map Legend -->
                     <div class="map-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background:#46b5d1;"></span> 🌊 Coral Shoreline & Docks</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#7ec850;"></span> 🌳 Cherry & Apple Groves</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f7ebd3;"></span> 🏖️ Sandy Beachfront</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#e85d04;"></span> 🏡 Cozy Villager Cottages</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#ffd166;"></span> 🏛️ Town Square Plaza</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#9b5de5;"></span> 🌉 Cobblestone & Bridges</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#46b5d1;"></span> 🌊 Coral Shoreline</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#7ec850;"></span> 🌳 Cherry Groves</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f7ebd3;"></span> 🏖️ Sandy Beach</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#e85d04;"></span> 🏡 Cottages</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#ffd166;"></span> 🏛️ Plaza</div>
                     </div>
                 </div>
 
-                <!-- BOX 2: MACRO ECONOMY & TREASURY -->
-                <div class="command-box">
-                    <div class="box-header">
-                        <div class="box-title">
-                            <span>📈</span> MACRO ECONOMY & TREASURY
-                        </div>
+                <!-- BOX 2: MACRO-ECONOMY -->
+                <div class="command-box" style="flex:0.9; min-height:0;">
+                    <div class="box-header" style="margin-bottom:0.4rem; padding-bottom:0.3rem;">
+                        <div class="box-title" style="font-size:1rem;"><span>📈</span> MACRO ECONOMY & GDP</div>
                     </div>
 
-                    <div class="metrics-row" style="margin-bottom:1rem;">
+                    <div class="metrics-row" style="margin-bottom:0.4rem;">
                         <div class="sub-metric">
                             <div class="metric-label">MONTHLY GDP</div>
-                            <div id="val-gdp" class="metric-val" style="color:var(--earth-moss);">$0.00</div>
+                            <div id="val-gdp" class="metric-val" style="color:var(--earth-moss); font-size:1.1rem;">$0.00</div>
                         </div>
                         <div class="sub-metric">
                             <div class="metric-label">LIVING CITIZENS</div>
-                            <div id="val-pop" class="metric-val" style="color:var(--earth-slate);">0 / 0</div>
+                            <div id="val-pop" class="metric-val" style="color:var(--earth-slate); font-size:1.1rem;">0 / 0</div>
                         </div>
                         <div class="sub-metric">
                             <div class="metric-label">RULING PARLIAMENT</div>
-                            <div id="val-party" class="metric-val" style="color:var(--earth-ochre);">Councils</div>
+                            <div id="val-party" class="metric-val" style="color:var(--earth-ochre); font-size:1.1rem;">Councils</div>
                         </div>
                     </div>
 
-                    <div style="background:var(--bg-earth-dark); padding:0.8rem; border:var(--border-thin); border-radius:var(--radius-sharp);">
-                        <div style="color:var(--earth-cream); font-family:var(--font-blocky); font-size:0.85rem; margin-bottom:0.4rem;">GDP HISTORICAL TRAJECTORY</div>
-                        <canvas id="canvas-gdp" style="width:100%; height:120px; background:#121920; border:var(--border-thin);"></canvas>
+                    <div style="flex:1; min-height:0; background:var(--bg-earth-dark); padding:0.4rem; border:var(--border-thin); border-radius:var(--radius-sharp); display:flex; flex-direction:column;">
+                        <div style="color:var(--earth-cream); font-family:var(--font-blocky); font-size:0.75rem; margin-bottom:0.2rem;">GDP TRAJECTORY</div>
+                        <canvas id="canvas-gdp" style="width:100%; flex:1; min-height:0; background:#121920; border:var(--border-thin);"></canvas>
                     </div>
                 </div>
 
                 <!-- BOX 3: CITIZENS REGISTRY -->
-                <div class="command-box">
-                    <div class="box-header">
-                        <div class="box-title">
-                            <span>👥</span> CITIZENS REGISTRY
-                        </div>
-                        <input type="text" id="agent-search" style="border:var(--border-thin); padding:0.3rem 0.6rem; font-family:var(--font-blocky); font-size:0.85rem;" placeholder="Search citizen...">
+                <div class="command-box" style="flex:0.7; min-height:0;">
+                    <div class="box-header" style="margin-bottom:0.4rem; padding-bottom:0.3rem;">
+                        <div class="box-title" style="font-size:1rem;"><span>👥</span> CITIZENS REGISTRY</div>
+                        <input type="text" id="agent-search" style="border:var(--border-thin); padding:0.2rem 0.5rem; font-family:var(--font-blocky); font-size:0.75rem;" placeholder="Search citizen...">
                     </div>
 
-                    <div id="agents-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:0.75rem; max-height:220px; overflow-y:auto;"></div>
+                    <div id="agents-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:0.5rem; flex:1; min-height:0; overflow-y:auto;"></div>
                 </div>
 
             </div>
@@ -148,34 +145,34 @@
             <div class="right-column">
 
                 <!-- BOX 4: GAZETTE CHRONICLE -->
-                <div class="command-box">
-                    <div class="box-header">
-                        <div class="box-title"><span>📰</span> SOLARIA CHRONICLE GAZETTE</div>
+                <div class="command-box" style="flex:1; min-height:0;">
+                    <div class="box-header" style="margin-bottom:0.4rem; padding-bottom:0.3rem;">
+                        <div class="box-title" style="font-size:1rem;"><span>📰</span> SOLARIA CHRONICLE GAZETTE</div>
                         <span class="box-badge" style="background:var(--earth-terracotta); color:#fff;">LATEST ISSUE</span>
                     </div>
 
-                    <div id="newspaper-container" style="max-height:300px; overflow-y:auto;"></div>
+                    <div id="newspaper-container" style="flex:1; min-height:0; overflow-y:auto;"></div>
                 </div>
 
                 <!-- BOX 5: ECHO SOCIAL PULSE -->
-                <div class="command-box">
-                    <div class="box-header">
-                        <div class="box-title"><span>💬</span> ECHO SOCIAL PULSE</div>
+                <div class="command-box" style="flex:1; min-height:0;">
+                    <div class="box-header" style="margin-bottom:0.4rem; padding-bottom:0.3rem;">
+                        <div class="box-title" style="font-size:1rem;"><span>💬</span> ECHO SOCIAL PULSE</div>
                         <span class="box-badge" style="background:var(--earth-moss); color:#fff;">LIVE FEED</span>
                     </div>
 
-                    <div id="echo-feed" style="display:flex; flex-direction:column; gap:0.6rem; max-height:300px; overflow-y:auto;"></div>
+                    <div id="echo-feed" style="display:flex; flex-direction:column; gap:0.5rem; flex:1; min-height:0; overflow-y:auto;"></div>
                 </div>
 
                 <!-- BOX 6: POLITICS & LAWS -->
-                <div class="command-box">
-                    <div class="box-header">
-                        <div class="box-title"><span>🏛️</span> PARLIAMENT & CIVIC AFFAIRS</div>
+                <div class="command-box" style="flex:0.6; min-height:0;">
+                    <div class="box-header" style="margin-bottom:0.4rem; padding-bottom:0.3rem;">
+                        <div class="box-title" style="font-size:1rem;"><span>🏛️</span> PARLIAMENT & CIVIC AFFAIRS</div>
                     </div>
-                    <div style="font-size:0.85rem; line-height:1.6;">
+                    <div style="font-size:0.8rem; line-height:1.4;">
                         <div><strong>RULING FACTION:</strong> <span id="pol-ruling" style="color:var(--earth-terracotta); font-weight:700;">Representative Councils</span></div>
                         <div><strong>CIVIC SALIENCE NODES:</strong> <span id="val-events" style="font-weight:700;">0</span></div>
-                        <p style="color:var(--ink-muted); font-size:0.8rem; margin-top:0.4rem;">Parliament meets monthly to deliberate civic infrastructure, tax rates, and corporate regulations across all planetary biomes.</p>
+                        <p style="color:var(--ink-muted); font-size:0.75rem; margin-top:0.3rem;">Parliament meets monthly to deliberate civic infrastructure, tax rates, and corporate regulations across all planetary biomes.</p>
                     </div>
                 </div>
 
