@@ -513,53 +513,148 @@ class MosaicUltraPlanetaryApp {
             renderTree(500 + (i * 22 % 90), 110 + (i * 17 % 50), '🍒');
         }
 
-        // 🏡 Cozy Villager Cottages (Ironreach & Solaria Plaza)
-        const renderCottage = (x, y, roofColor) => {
-            ctx.fillStyle = '#fffcf2';
-            ctx.fillRect(x - 14, y - 10, 28, 20);
-            ctx.strokeStyle = '#6b4423';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x - 14, y - 10, 28, 20);
+        // ☁️ High-Res Layered Clouds Layer with Drop Shadows
+        if (this.layers.clouds) {
+            this.clouds.forEach(c => {
+                // Cloud Shadow on ground
+                ctx.fillStyle = 'rgba(74, 40, 16, 0.08)';
+                ctx.beginPath();
+                ctx.ellipse(c.x + 15, c.y + 35, c.size * 1.1, c.size * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Roof Triangle
-            ctx.fillStyle = roofColor;
+                // High-Res Soft Puffy Cloud Body
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(c.x + c.size * 0.4, c.y - c.size * 0.2, c.size * 0.55, 0, Math.PI * 2);
+                ctx.arc(c.x - c.size * 0.4, c.y + c.size * 0.1, c.size * 0.5, 0, Math.PI * 2);
+                ctx.arc(c.x + c.size * 0.7, c.y + c.size * 0.1, c.size * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Soft Cloud Shading Highlight
+                ctx.fillStyle = 'rgba(230, 245, 255, 0.6)';
+                ctx.beginPath();
+                ctx.arc(c.x - c.size * 0.1, c.y - c.size * 0.2, c.size * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // 🏘️ High-Detail City Buildings (Town Hall, Nook's Shop, Able Sisters, Docks)
+        const renderTownHall = (x, y) => {
+            // Main Plaza Cobblestone Base
+            ctx.fillStyle = '#f7ebd3';
+            ctx.fillRect(x - 30, y - 25, 60, 45);
+            ctx.strokeStyle = '#a67c52';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 30, y - 25, 60, 45);
+
+            // Brick Building Structure
+            ctx.fillStyle = '#c25e40';
+            ctx.fillRect(x - 22, y - 18, 44, 30);
+            ctx.strokeStyle = '#6b4423';
+            ctx.strokeRect(x - 22, y - 18, 44, 30);
+
+            // Roof with Clocktower Spike
+            ctx.fillStyle = '#2d6a4f';
             ctx.beginPath();
-            ctx.moveTo(x - 18, y - 10);
-            ctx.lineTo(x, y - 24);
-            ctx.lineTo(x + 18, y - 10);
+            ctx.moveTo(x - 26, y - 18);
+            ctx.lineTo(x, y - 34);
+            ctx.lineTo(x + 26, y - 18);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // Door
+            // Clock Circle
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(x, y - 24, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Double Doors
             ctx.fillStyle = '#6b4423';
-            ctx.fillRect(x - 4, y, 8, 10);
+            ctx.fillRect(x - 6, y, 12, 12);
         };
 
-        renderCottage(340, 380, '#ff85a1'); // Ironreach Pink House
-        renderCottage(380, 410, '#ffd166'); // Ironreach Yellow House
-        renderCottage(530, 160, '#46b5d1'); // Solaria Blue House
-        renderCottage(580, 180, '#52b788'); // Solaria Green House
+        const renderNooksCranny = (x, y) => {
+            // Wooden Shop Structure
+            ctx.fillStyle = '#f5e3b5';
+            ctx.fillRect(x - 18, y - 12, 36, 24);
+            ctx.strokeStyle = '#6b4423';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 18, y - 12, 36, 24);
 
-        // 🌉 Wooden Docks & Bridges Layer
+            // Green Striped Awning Roof
+            ctx.fillStyle = '#52b788';
+            ctx.fillRect(x - 22, y - 18, 44, 8);
+            ctx.strokeRect(x - 22, y - 18, 44, 8);
+
+            // Nook Leaf Signboard
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(x, y - 22, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.font = '8px sans-serif';
+            ctx.fillText('🍃', x - 4, y - 19);
+        };
+
+        const renderAbleSisters = (x, y) => {
+            ctx.fillStyle = '#ffb3c1';
+            ctx.fillRect(x - 16, y - 10, 32, 20);
+            ctx.strokeStyle = '#6b4423';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 16, y - 10, 32, 20);
+
+            ctx.fillStyle = '#ff85a1';
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y - 10);
+            ctx.lineTo(x, y - 22);
+            ctx.lineTo(x + 20, y - 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        };
+
+        // Render City Landmarks
+        renderTownHall(550, 170); // Solaria Metropolis Town Hall Plaza
+        renderNooksCranny(500, 140); // Nook's Cranny Shop
+        renderAbleSisters(600, 190); // Able Sisters Tailor
+        renderTownHall(340, 400); // Ironreach Community Hall
+        renderNooksCranny(220, 240); // Aethelgard Port Shop
+        renderAbleSisters(800, 320); // Veridia Farm Shop
+
+        // 🌉 High-Detail Cobblestone Highways & Stone Bridges Layer
         if (this.layers.roads) {
-            ctx.strokeStyle = '#a67c52';
-            ctx.lineWidth = 6;
-            ctx.beginPath();
-            // Dock at Port
-            ctx.moveTo(180, 240); ctx.lineTo(120, 240);
-            ctx.stroke();
+            const drawHighway = (x1, y1, x2, y2) => {
+                // Outer Stone Border
+                ctx.strokeStyle = '#6b4423';
+                ctx.lineWidth = 9;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                ctx.stroke();
 
-            // Cobblestone Village Paths
-            ctx.strokeStyle = '#ffd166';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath();
-            ctx.moveTo(550, 170); ctx.lineTo(220, 240);
-            ctx.moveTo(550, 170); ctx.lineTo(340, 400);
-            ctx.moveTo(550, 170); ctx.lineTo(800, 320);
-            ctx.stroke();
-            ctx.setLineDash([]);
+                // Cobblestone Main Path
+                ctx.strokeStyle = '#f5e3b5';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                // Paver Brick Dashes
+                ctx.strokeStyle = '#a67c52';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            };
+
+            drawHighway(550, 170, 220, 240); // Solaria -> Port
+            drawHighway(550, 170, 340, 400); // Solaria -> Ironreach
+            drawHighway(550, 170, 800, 320); // Solaria -> Veridia
+            drawHighway(220, 240, 340, 400); // Port -> Ironreach
         }
 
         // Factory Smoke Spirals (Ironreach House Smoke)
